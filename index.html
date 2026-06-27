@@ -402,7 +402,7 @@
     // แยกค่าช่อง Use เป็น { ร้าน, ชื่อ, วันที่ } — ดึงวันที่ท้ายแม้ไม่มีช่องว่างคั่น
     function parseUseValue(value){
       let head = String(value||'').trim(), date = '';
-      const m = head.match(/^(.*?)\s*(\d{1,2}\/\d{1,2}\/\d{2,4})\s*$/);
+      const m = head.match(/^(.*?)\s*\(?(\d{1,2}\/\d{1,2}\/\d{2,4})\)?\s*$/);
       if(m){ head = m[1].trim(); date = m[2]; }
       let store = '';
       for(const s of STORE_OPTIONS){

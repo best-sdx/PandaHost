@@ -267,7 +267,7 @@
     let machineOptions = [];
     let userNameMap = {};
 
-    const GIFT_CARD_URL = '';
+    const GIFT_CARD_URL = 'https://best-sdx.github.io/PandaGiftcard/';
     function openGiftCard(){
       window.open(GIFT_CARD_URL, '_blank');
     }
@@ -713,7 +713,7 @@
 
     // ===== /CACHE =====
 
-    const MACHINE_EXCLUDE = ['admin'];
+    const MACHINE_EXCLUDE = ['admin','Fluk', 'Pop'];
 
     async function loadMachineOptions(){
       const { data, error } = await sb.from('user_profiles').select('username,name').order('name',{ascending:true});

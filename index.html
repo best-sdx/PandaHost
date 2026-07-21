@@ -1013,7 +1013,7 @@
 
     // ===== /CACHE =====
 
-    const MACHINE_EXCLUDE = ['Nu'];
+    const MACHINE_EXCLUDE = ['fluk, Pop'];
 
     async function loadMachineOptions(){
       const { data, error } = await sb.from('user_profiles').select('username,name').order('name',{ascending:true});

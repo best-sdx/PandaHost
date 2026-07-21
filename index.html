@@ -391,7 +391,7 @@
   </div>
 
   <div id="userModalBackdrop" class="modal-backdrop">
-    <div class="modal">
+    <div class="modal" style="width:min(96vw,980px); max-width:none;">
       <div class="modal-header">
         <div class="modal-title">จัดการผู้ใช้</div>
         <button class="btn-red" onclick="closeUserModal()">ปิด</button>
@@ -417,8 +417,14 @@
         <button class="btn-gray" onclick="loadUsers()">รีเฟรชรายชื่อ</button>
       </div>
       <div class="table-wrap" style="margin-top:14px; max-height:45vh;">
-        <table style="min-width:700px;">
-          <thead><tr><th>Username</th><th>ชื่อ</th><th>บทบาท</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+        <table id="userTable" style="width:100%; table-layout:fixed;">
+          <thead><tr>
+            <th style="width:24%;">Username</th>
+            <th style="width:16%;">ชื่อ</th>
+            <th style="width:16%;">บทบาท</th>
+            <th style="width:16%;">สถานะ</th>
+            <th style="width:28%;">จัดการ</th>
+          </tr></thead>
           <tbody id="userTableBody"></tbody>
         </table>
       </div>

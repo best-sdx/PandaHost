@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Youtube Panda & Good Game</title>
+  <title>Youtube Panda &amp; Good Game</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2064%2064'%3E%3Ctext%20y%3D'52'%20font-size%3D'50'%3E%F0%9F%90%BC%3C%2Ftext%3E%3C%2Fsvg%3E">
 
   <style>
@@ -115,12 +115,12 @@
     }
     .search-input:focus{ border-color:#fcc419; }
     .filter-group{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .filter-group input[type=date]{
+    .filter-group input[type=date], .filter-group select{
       padding:9px 12px; border-radius:18px;
       border:2px solid #ffe066; background:#fffdf5;
       font-family:'Sarabun',sans-serif; font-size:14px; color:#3a2c00; outline:none;
     }
-    .filter-group input[type=date]:focus{ border-color:#fcc419; }
+    .filter-group input[type=date]:focus, .filter-group select:focus{ border-color:#fcc419; }
     .chk-label{
       font-size:14px; color:#2f6b3a; font-weight:700;
       display:flex; align-items:center; gap:6px; cursor:pointer;
@@ -157,6 +157,8 @@
     td.machine-cell{ white-space:nowrap !important; overflow:hidden; text-overflow:ellipsis; }
     td.editable{ cursor:pointer; }
     td.editable:hover{ box-shadow:inset 0 0 0 2px rgba(252,196,25,0.5); }
+    td.use-cell[draggable=true]{ cursor:grab; }
+    td.use-cell.drop-hint{ box-shadow:inset 0 0 0 3px #339af0 !important; }
     td.actions{ white-space:nowrap; text-align:center; }
     td.actions .btn-yellow{ padding:5px 16px; font-size:13px; box-shadow:0 3px 0 #e8a800; }
     td.actions .btn-yellow:active{ box-shadow:0 1px 0 #e8a800; }
@@ -196,6 +198,31 @@
     }
     .form-group input:focus,.form-group select:focus,.form-group textarea:focus{ border-color:#40c057; }
     .hint-red{ font-size:10px; color:#c00; margin-left:4px; }
+    /* ปุ่มข้อความสำเร็จรูป (หน้างานรอแก้ไข) */
+    .rc-tag{
+      border:1px solid #40c057; background:#eefaf2; color:#0f5132;
+      border-radius:8px; padding:6px 12px; font-size:13px; font-weight:700; cursor:pointer;
+      font-family:'Sarabun',sans-serif;
+    }
+    .rc-tag:hover{ background:#d8f3df; }
+    /* ช่องจัดการของงานที่เสร็จแล้ว — ห้ามตัดปุ่มทิ้งเป็น ... */
+    #retryDoneBody td.actions{ overflow:visible; text-overflow:clip; }
+    body.dark .rc-tag{ background:#1e2a22; border-color:#2f5138; color:#8ce99a; }
+
+    /* ===== เมนู UPI (popup เล็กใต้ปุ่ม) ===== */
+    #upiMenu{
+      display:none; position:fixed; z-index:9997;
+      background:#fff; border:2px solid #d7eede; border-radius:14px;
+      box-shadow:0 10px 28px rgba(40,80,50,0.22); padding:6px; min-width:215px;
+    }
+    .upi-menu-item{
+      padding:11px 14px; border-radius:10px; cursor:pointer;
+      font-size:14px; font-weight:700; color:#2b3a2e; white-space:nowrap;
+    }
+    .upi-menu-item:hover{ background:#e8f7ec; }
+    body.dark #upiMenu{ background:#20262c; border-color:#2c333a; }
+    body.dark .upi-menu-item{ color:#dfe6ea; }
+    body.dark .upi-menu-item:hover{ background:#283039; }
 
     /* ===== POPUP ===== */
     .popup-backdrop{
@@ -266,7 +293,7 @@
 
     body.dark .search-row{ border-top-color:#4a4020; }
     body.dark .search-input{ background:#252b31; border-color:#4a4020; color:#e8eef0; }
-    body.dark .filter-group input[type=date]{ background:#252b31; border-color:#4a4020; color:#e8eef0; }
+    body.dark .filter-group input[type=date], body.dark .filter-group select{ background:#252b31; border-color:#4a4020; color:#e8eef0; }
     body.dark .chk-label{ background:#1e2a22; border-color:#2f5138; color:#8ce99a; }
     body.dark .status-msg{ color:#9aa5ad; }
 
@@ -323,19 +350,19 @@
           </div>
           <div class="topbar-actions">
             <button class="btn-yellow" onclick="openGiftCard()">🎁 เบิก gift card</button>
+            <button class="btn-gray" onclick="openRetryModal()" style="position:relative;">🛠 งานรอแก้ไข<span id="retryBadge" style="display:none;position:absolute;top:-7px;right:-7px;background:#fa5252;color:#fff;border-radius:10px;min-width:20px;height:20px;padding:0 5px;font-size:12px;font-weight:800;line-height:20px;text-align:center;">0</span></button>
+            <button class="btn-yellow" data-upimenu="1" onclick="openUpiMenu(event)">🔑 UPI</button>
             <button id="manageUsersBtn" class="btn-gray" style="display:none;" onclick="openUserModal()">จัดการผู้ใช้</button>
             <button id="auditBtn" class="btn-gray" style="display:none;" onclick="openAuditModal()">ประวัติ</button>
             <button id="addBtn" class="btn-blue" onclick="openAddModal()">+ เพิ่มข้อมูล</button>
             <button id="darkToggle" class="btn-gray" onclick="toggleDark()" title="สลับโหมดมืด/สว่าง">🌙</button>
+            <button class="btn-gray" onclick="exportCsv()" title="ส่งออกทุกแถวเป็นไฟล์ เปิดใน Google Sheets ได้">📊 ส่งออก Sheets</button>
             <button class="btn-gray" onclick="forceReload()" title="ล้าง cache แล้วโหลดใหม่ทั้งหมด">↻ โหลดใหม่</button>
             <button class="btn-gray" onclick="doLogout()">ออกจากระบบ</button>
           </div>
         </div>
         </style>
-
-        
-        
-        <div id="summaryBar" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+<div id="summaryBar" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
           <div class="summary-box" style="background:#e7f1ff; color:#084298;">
             <div class="summary-num" id="sumTotal">-</div>
             <div class="summary-label">หัวบ้านทั้งหมด</div>
@@ -366,8 +393,10 @@
           <input id="searchInput" class="search-input" type="text" placeholder="ค้นหาทั่วไป เช่น อีเมล, เครื่อง, เบอร์" oninput="applySearch()" onkeydown="if(event.key==='Enter')applySearch()">
           <div class="filter-group">
             <button id="roomPageBtn" class="btn-primary" onclick="toggleRoomPage()">🏠 เบิกห้องว่าง</button>
+            <select id="roomMachineSel" style="display:none;" onchange="applySearch()" title="กรองห้องว่างตามเครื่อง"></select>
             <label class="chk-label"><input id="chkUseDate" type="checkbox" onchange="applySearch()">ค้นจากวันที่ (Use 1-5)</label>
             <label class="chk-label"><input id="chkMachine" type="checkbox" onchange="applySearch()">ค้นจากเครื่อง</label>
+            <button id="fixFilterBtn" class="btn-gray" onclick="toggleFixFilter()" title="กดสลับ: ทั้งหมด → ยังไม่ได้แก้ไข → แก้ไขแล้ว">🔧 สถานะแก้ไข: ทั้งหมด</button>
             <button class="btn-gray" onclick="clearSearch()">ล้างผลค้นหา</button>
           </div>
         </div>
@@ -375,6 +404,10 @@
       </div>
 
       <div class="card">
+        <div id="roomBackBar" style="display:none; margin-bottom:10px;">
+          <button class="btn-gray" onclick="roomBackToList()">◂ กลับรายชื่อหัวบ้าน</button>
+          <span id="roomBackLabel" style="margin-left:10px; font-weight:800; color:#2f6b3a;"></span>
+        </div>
         <div id="topScroll" style="overflow-x:auto; overflow-y:hidden; border:1px solid #b7b7b7; border-bottom:none; border-radius:6px 6px 0 0;"><div style="height:1px;"></div></div>
         <div class="table-wrap">
           <table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
@@ -456,6 +489,188 @@
     </div>
   </div>
 
+  <div id="retryModalBackdrop" class="modal-backdrop">
+    <div class="modal" style="width:min(96vw,900px); max-width:none;">
+      <div class="modal-header">
+        <div class="modal-title">🛠 งานรอแก้ไข</div>
+        <button class="btn-red" onclick="closeRetryModal()">ปิด</button>
+      </div>
+      <div id="retryModalAlert" class="modal-alert"></div>
+      <div class="form-grid" style="grid-template-columns:2fr 2fr 1fr auto; align-items:end;">
+        <div class="form-group"><label>งานที่ต้องแก้</label><input id="rcNote" type="text" placeholder="เช่น บัตรตัดไม่ผ่าน รอตัดใหม่" onkeydown="if(event.key==='Enter')saveRetryCase()"></div>
+        <div class="form-group"><label>หัวบ้าน/ลูกค้า <span style="color:#888;font-weight:400;">(ไม่ใส่ก็ได้)</span></label><input id="rcEmail" type="text" placeholder="เช่น customer@gmail.com" onkeydown="if(event.key==='Enter')saveRetryCase()"></div>
+        <div class="form-group"><label>กำหนดเสร็จ (วัน)</label><input id="rcDate" type="date"></div>
+        <div class="form-group"><button id="rcSaveBtn" class="btn-primary" onclick="saveRetryCase()">เพิ่มงาน</button></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;">
+        <span style="font-size:12px;font-weight:700;color:#888;">ข้อความสำเร็จรูป:</span>
+        <button class="rc-tag" onclick="rcSetNote('หลุดพรีเมี่ยม')">หลุดพรีเมี่ยม</button>
+        <button class="rc-tag" onclick="rcSetNote('รอตัดชำระใหม่')">รอตัดชำระใหม่</button>
+        <button class="rc-tag" onclick="rcSetNote('รอเข้าเช็ค')">รอเข้าเช็ค</button>
+      </div>
+      <div style="font-size:12px;color:#888;margin-top:8px;">
+        ระบบสรุป "งานที่ยังค้าง" ส่งเข้ากลุ่มไลน์ทุกวัน 8 โมงเช้า และ 5 โมงเย็น (งานที่กดเสร็จแล้วไม่ถูกส่ง) • งานที่ถึงกำหนดแล้วช่องวันที่ขึ้นสีแดง<br>
+        งานที่แก้เสร็จแล้วเกิน 7 วัน ระบบลบออกให้อัตโนมัติ (สถานะ "แก้ไขแล้ว" ในตารางหลักยังอยู่เหมือนเดิม)
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:2px dashed #ffe066;">
+        <span style="font-size:13px;font-weight:800;color:#2f6b3a;">ดูงานของวันที่:</span>
+        <div class="form-group" style="flex:none;"><input id="rcDay" type="date" onchange="rcDayPick()"></div>
+        <button class="btn-gray" onclick="rcDayToday()">วันนี้</button>
+        <button id="rcAllBtn" class="btn-yellow" onclick="rcToggleAll()">📋 งานค้างทุกวัน</button>
+        <input id="rcSearch" class="search-input" type="text" placeholder="🔍 ค้นหาอีเมล (ทุกวัน)" style="min-width:200px;max-width:280px;" oninput="rcSearchInput()">
+        <button class="btn-gray" onclick="rcClearSearch()">ล้าง</button>
+      </div>
+
+      <div id="rcPendingHead" style="font-size:14px;font-weight:800;color:#c92a2a;margin:14px 0 6px;">🔧 ยังไม่แก้ไข (<span id="rcPendingCount">0</span>)</div>
+      <div class="table-wrap" style="max-height:34vh;">
+        <table style="width:100%; table-layout:fixed;">
+          <thead><tr>
+            <th style="width:30%;">งานที่ต้องแก้</th>
+            <th style="width:22%;">หัวบ้าน/ลูกค้า</th>
+            <th style="width:15%;">กำหนดเสร็จ</th>
+            <th style="width:13%;">ผู้แจ้ง</th>
+            <th style="width:20%;">จัดการ</th>
+          </tr></thead>
+          <tbody id="retryTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="rcDoneHead" style="font-size:14px;font-weight:800;color:#2f9e44;margin:16px 0 6px;">✅ แก้เสร็จแล้ว (<span id="rcDoneCount">0</span>)</div>
+      <div id="rcDoneWrap" class="table-wrap" style="max-height:34vh;">
+        <table style="width:100%; table-layout:fixed;">
+          <thead><tr>
+            <th style="width:24%;">งานที่ต้องแก้</th>
+            <th style="width:18%;">หัวบ้าน/ลูกค้า</th>
+            <th style="width:12%;">กำหนดเสร็จ</th>
+            <th style="width:14%;">เสร็จเมื่อ</th>
+            <th style="width:32%;">คนแก้ / จัดการ</th>
+          </tr></thead>
+          <tbody id="retryDoneBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="upiMenu">
+    <div class="upi-menu-item" onclick="closeUpiMenu();runAutoRenew()" title="ระบบต่อให้เองทุกวัน 9 โมงเช้าอยู่แล้ว — กดนี่คือสั่งให้ทำทันที">🔄 ต่ออายุอัตโนมัติ (สั่งทำเลย)</div>
+    <div class="upi-menu-item" onclick="closeUpiMenu();openUpiStockModal()">🎁 เบิก UPI จากคลัง</div>
+    <div class="upi-menu-item" onclick="closeUpiMenu();openUpiCheckModal()">🔎 เช็ค UPI ↔ หัวบ้าน</div>
+    <div class="upi-menu-item" onclick="closeUpiMenu();openBadUpiModal()">❌ รายการ UPI เสีย</div>
+  </div>
+
+  <div id="upiCheckModalBackdrop" class="modal-backdrop">
+    <div class="modal" style="width:min(96vw,980px); max-width:none;">
+      <div class="modal-header">
+        <div class="modal-title">🔎 เช็ค UPI ↔ หัวบ้าน</div>
+        <button class="btn-red" onclick="closeUpiCheckModal()">ปิด</button>
+      </div>
+      <div id="upiCheckFilterBar">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <input id="upiCheckSearch" class="search-input" type="text" placeholder="🔍 พิมพ์ UPI หรืออีเมลหัวบ้าน" style="min-width:260px;" oninput="renderUpiCheck()">
+          <button class="btn-gray" onclick="document.getElementById('upiCheckSearch').value='';renderUpiCheck()">ล้าง</button>
+          <label class="chk-label"><input id="upiCheckDupOnly" type="checkbox" onchange="renderUpiCheck()">เฉพาะที่ซ้ำ/เสีย</label>
+        </div>
+        <div style="font-size:12px;color:#888;margin-top:8px;">
+          1 บรรทัด = 1 UPI (เฉพาะตัวที่ถูกใส่ไว้ที่หัวบ้านแล้ว — ตัวที่ยังอยู่ในคลังไม่ถูกนำมาแสดง)<br>
+          กดที่ป้าย <b>จำนวนอีเมล</b> เพื่อดูว่าใส่ไว้ที่อีเมลไหนบ้าง • <b style="color:#c92a2a;">แดง</b> = ผูกหลายอีเมล (ผิดปกติ) • ป้าย <b style="color:#5c4400;">เสีย</b> = อยู่ในรายการ UPI เสีย
+        </div>
+      </div>
+      <div id="upiCheckBackBar" style="display:none;margin-top:4px;">
+        <button class="btn-gray" onclick="upiCheckBack()">◂ กลับรายการ UPI</button>
+        <span id="upiCheckDetailLabel" style="margin-left:10px;font-weight:800;color:#2f6b3a;word-break:break-all;"></span>
+      </div>
+      <div style="font-size:14px;font-weight:800;color:#2f9e44;margin:12px 0 6px;">พบ <span id="upiCheckCount">0</span> รายการ</div>
+      <div class="table-wrap" style="max-height:60vh;">
+        <table style="width:100%; table-layout:fixed;">
+          <thead id="upiCheckHead"></thead>
+          <tbody id="upiCheckBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="upiStockModalBackdrop" class="modal-backdrop">
+    <div class="modal" style="width:min(96vw,900px); max-width:none;">
+      <div class="modal-header">
+        <div class="modal-title">🔑 คลัง UPI</div>
+        <button class="btn-red" onclick="closeUpiStockModal()">ปิด</button>
+      </div>
+      <div id="upiStockAlert" class="modal-alert"></div>
+
+      <div style="padding:16px 14px;background:#f1faf4;border:2px solid #c3ebcf;border-radius:14px;text-align:center;">
+        <div style="font-size:12px;font-weight:700;color:#2f6b3a;">คงเหลือในคลัง</div>
+        <div id="upiRemaining" style="font-size:34px;font-weight:800;color:#2f9e44;line-height:1.1;">-</div>
+        <button id="upiRedeemBtn" class="btn-primary" style="margin-top:12px;padding:12px 30px;font-size:16px;" onclick="redeemUpi()">🎁 เบิก UPI 1 อัน</button>
+        <div style="font-size:12px;color:#7a8a7e;margin-top:8px;">ระบบจะจ่ายทีละอัน พร้อมบันทึกชื่อคนเบิกและเวลาให้อัตโนมัติ</div>
+      </div>
+
+      <div id="upiAdminBox" style="display:none;margin-top:14px;padding-top:14px;border-top:2px dashed #ffe066;">
+        <div style="font-size:14px;font-weight:800;color:#2f6b3a;margin-bottom:8px;">📦 เติม UPI เข้าคลัง (เฉพาะแอดมิน)</div>
+        <div class="form-group">
+          <label>วาง UPI ได้หลายอัน (ขึ้นบรรทัดใหม่ หรือคั่นด้วยเว้นวรรค/ลูกน้ำ)</label>
+          <textarea id="upiRaw" rows="4" placeholder="UPI111111&#10;UPI222222&#10;UPI333333"></textarea>
+        </div>
+        <div class="form-grid" style="grid-template-columns:3fr auto; align-items:end; margin-top:8px;">
+          <div class="form-group"><label>หมายเหตุ (ไม่บังคับ)</label><input id="upiNote" type="text" placeholder="เช่น ล็อตวันที่ 5/9/69"></div>
+          <div class="form-group"><button id="upiAddBtn" class="btn-blue" onclick="addUpiStock()">เติมเข้าคลัง</button></div>
+        </div>
+      </div>
+
+      <div style="font-size:14px;font-weight:800;color:#2f9e44;margin:16px 0 6px;"><span id="upiHistTitle">🧾 ประวัติการเบิก</span> (<span id="upiHistCount">0</span>)</div>
+      <div id="upiFilterGrid" class="form-grid" style="grid-template-columns:repeat(3,1fr) auto; align-items:end; margin-bottom:10px;">
+        <div id="upiFilterUserWrap" class="form-group"><label>คนเบิก</label><select id="upiFilterUser" onchange="loadUpiStock()"></select></div>
+        <div class="form-group"><label>เลือกวัน</label><input id="upiFilterDate" type="date" onchange="upiPickDate()"></div>
+        <div class="form-group"><label>เลือกเดือน</label><input id="upiFilterMonth" type="month" onchange="upiPickMonth()"></div>
+        <div class="form-group"><button class="btn-gray" onclick="upiClearFilter()">ล้างตัวกรอง</button></div>
+      </div>
+      <div class="table-wrap" style="max-height:45vh;">
+        <table style="width:100%; table-layout:fixed;">
+          <thead><tr>
+            <th style="width:34%;">UPI ที่เบิก</th>
+            <th style="width:20%;">คนเบิก</th>
+            <th style="width:22%;">เวลาเบิก</th>
+            <th style="width:24%;">หมายเหตุล็อต</th>
+          </tr></thead>
+          <tbody id="upiHistBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="badUpiModalBackdrop" class="modal-backdrop">
+    <div class="modal" style="width:min(96vw,900px); max-width:none;">
+      <div class="modal-header">
+        <div class="modal-title">❌ UPI เสีย</div>
+        <button class="btn-red" onclick="closeBadUpiModal()">ปิด</button>
+      </div>
+      <div id="badUpiAlert" class="modal-alert"></div>
+      <div class="form-grid" style="grid-template-columns:2fr 2fr 2fr auto; align-items:end;">
+        <div class="form-group"><label>UPI ที่เสีย</label><input id="buUpi" type="text" placeholder="วางเลข UPI" onkeydown="if(event.key==='Enter')saveBadUpi()"></div>
+        <div class="form-group"><label>หัวบ้าน <span style="color:#888;font-weight:400;">(ไม่ใส่ก็ได้)</span></label><input id="buEmail" type="text" placeholder="เช่น customer@gmail.com" onkeydown="if(event.key==='Enter')saveBadUpi()"></div>
+        <div class="form-group"><label>หมายเหตุ <span style="color:#888;font-weight:400;">(ไม่ใส่ก็ได้)</span></label><input id="buNote" type="text" placeholder="เช่น ใช้ไม่ได้ ขึ้น error" onkeydown="if(event.key==='Enter')saveBadUpi()"></div>
+        <div class="form-group"><button id="buSaveBtn" class="btn-primary" onclick="saveBadUpi()">เพิ่ม</button></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;">
+        <input id="buSearch" class="search-input" type="text" placeholder="🔍 ค้นหา UPI / หัวบ้าน" style="min-width:220px;max-width:320px;" oninput="renderBadUpiTable()">
+        <button class="btn-gray" onclick="document.getElementById('buSearch').value='';renderBadUpiTable()">ล้าง</button>
+        <span style="font-size:12px;color:#888;">ระบบบันทึกคนแจ้งและวันเวลาให้อัตโนมัติ • UPI ซ้ำจะเตือนไม่ให้ใส่ซ้ำ</span>
+      </div>
+      <div class="table-wrap" style="margin-top:12px; max-height:55vh;">
+        <table style="width:100%; table-layout:fixed;">
+          <thead><tr>
+            <th style="width:26%;">UPI</th>
+            <th style="width:24%;">หัวบ้าน</th>
+            <th style="width:22%;">หมายเหตุ</th>
+            <th style="width:12%;">คนแจ้ง</th>
+            <th style="width:16%;">วันที่แจ้ง / จัดการ</th>
+          </tr></thead>
+          <tbody id="badUpiTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div id="popupBackdrop" class="popup-backdrop">
     <div class="popup-box">
       <div id="popupIcon" class="popup-icon success">✓</div>
@@ -477,9 +692,9 @@
     const LOGIN_DOMAIN = 'pandagg.com';
 
     // คอลัมน์ที่ดึงจาก DB (ระบุชัด ไม่ใช้ * เพื่อลด egress)
-    const COLS = 'id,email,pass,use1,use2,use3,use4,use5,machine,contact,expire_date,status,credit,fill_date,apple_email,apple_pass,mail_birth,ios_verify,phone_owner,note,credit_deducted_for,updated_at';
+    const COLS = 'id,email,pass,use1,use2,use3,use4,use5,machine,contact,expire_date,status,credit,fill_date,apple_email,apple_pass,mail_birth,ios_verify,phone_owner,upi,upi_by,upi_at,note,credit_deducted_for,fix_done_at,updated_at';
     // cache key — เปลี่ยนเลขเวอร์ชันเมื่อ schema เปลี่ยน
-    const CACHE_KEY = 'pandagg_v2';
+    const CACHE_KEY = 'pandagg_v4';
 
     const DROPDOWN_OPTIONS = { status: ['เติมโค้ดแล้ว', 'ยังไม่เติม', 'ติดต่อไม่ได้', 'ปิดย้าย', 'ไนจีเรีย'] };
     const STORE_OPTIONS = ['Panda', 'goodgame'];   // ร้านสำหรับช่อง Use 1-5 (เพิ่มชื่อร้านได้ที่นี่)
@@ -493,6 +708,9 @@
     }
     let machineOptions = [];
     let userNameMap = {};
+    // อีเมลหัวบ้าน (ตัวพิมพ์เล็ก) → งานล่าสุดของหัวบ้านนั้นในตาราง retry_cases
+    // ใช้วาดคอลัมน์ "การแก้ไข" ในตารางหลัก
+    let retryByEmail = {};
 
     const GIFT_CARD_URL = '__GIFT_CARD_URL__';
     function openGiftCard(){
@@ -523,6 +741,7 @@
       { key:'mail_birth', header:'วันเกิดเมล' },
       { key:'ios_verify', header:'เบอร์ยืนยัน IOS' },
       { key:'phone_owner', header:'เจ้าของเบอร์' },
+      { key:'upi', header:'UPI' },
       { key:'note', header:'หมายเหตุ' }
     ];
 
@@ -538,6 +757,7 @@
       { key:'contact', header:'เบอร์ลูกค้า', width:120},
       { key:'expire_date', header:'หมดอายุ', dateExpire:true, width:90},
       { key:'status', header:'สถานะ', width:100},
+      { key:'__fix', header:'การแก้ไข', width:120},   // ผูกกับงานรอแก้ไข (retry_cases) — กดเพื่อเปลี่ยนสถานะ
       { key:'credit', header:'เครดิต', width:60},
       { key:'fill_date', header:'เติม Gift ล่าสุด', width:100},
       { key:'apple_email', header:'Email Apple ID', width:240},
@@ -545,6 +765,9 @@
       { key:'mail_birth', header:'วันเกิดเมล', width:100},
       { key:'ios_verify', header:'เบอร์ยืนยัน IOS', width:120},
       { key:'phone_owner', header:'เจ้าของเบอร์', width:100},
+      { key:'upi', header:'UPI', width:150},
+      { key:'upi_by', header:'คนที่ใส่ UPI', width:110},
+      { key:'upi_at', header:'วันที่ใส่ UPI', width:100},
       { key:'note', header:'หมายเหตุ', width:200}
     ];
 
@@ -791,11 +1014,11 @@
         const durRow=document.createElement('div'); durRow.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;';
         function addMonthsDur(d,n){ const day=d.getDate(); const nd=new Date(d.getFullYear(),d.getMonth()+n,1); const last=new Date(nd.getFullYear(),nd.getMonth()+1,0).getDate(); nd.setDate(Math.min(day,last)); return nd; }
         function fmtBE2(d){ return d.getDate()+'/'+(d.getMonth()+1)+'/'+String((d.getFullYear()+543)%100).padStart(2,'0'); }
-        [{t:'7 วัน',days:7},{t:'14 วัน',days:14},{t:'1 เดือน',mo:1},{t:'2 เดือน',mo:2},{t:'3 เดือน',mo:3},{t:'6 เดือน',mo:6},{t:'12 เดือน',mo:12}].forEach(o=>{
+        [{t:'วันนี้',days:0},{t:'7 วัน',days:7},{t:'14 วัน',days:14},{t:'1 เดือน',mo:1},{t:'2 เดือน',mo:2},{t:'3 เดือน',mo:3},{t:'6 เดือน',mo:6},{t:'12 เดือน',mo:12}].forEach(o=>{
           const b=document.createElement('button'); b.textContent=o.t;
           b.style.cssText='border:1px solid #40c057;background:#eefaf2;color:#0f5132;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;';
           b.onclick=()=>{ const now=new Date(); const base=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-            const d = o.days ? new Date(base.getTime()+o.days*86400000) : addMonthsDur(base,o.mo);
+            const d = (o.days!=null) ? new Date(base.getTime()+o.days*86400000) : addMonthsDur(base,o.mo);
             dateInput.value=fmtBE2(d); dateInput.focus({preventScroll:true}); };
           durRow.appendChild(b);
         });
@@ -857,7 +1080,7 @@
       document.getElementById('manageUsersBtn').style.display = (currentUser.role==='ADMIN') ? 'inline-block' : 'none';
       document.getElementById('auditBtn').style.display = (currentUser.role==='ADMIN') ? 'inline-block' : 'none';
       await loadMachineOptions();
-      showApp(); initTableHandlers(); await loadAccounts(); startRealtime(); startAutoSync();
+      showApp(); initTableHandlers(); loadRetryCases(); await loadAccounts(); startRealtime(); startAutoSync();
     }
     // ===== DARK MODE toggle =====
     function applyDark(on){
@@ -868,6 +1091,41 @@
     }
     function toggleDark(){ applyDark(!document.body.classList.contains('dark')); }
     (function(){ let v=null; try{ v=localStorage.getItem('pandagg_dark'); }catch(e){} applyDark(v==='1'); })();
+
+    // วันที่แบบ ว/ด/พ.ศ.2หลัก (เช่น 5/9/69) — รูปแบบเดียวกับช่องวันที่อื่นในตาราง
+    function fmtBE2Date(d){ return d.getDate()+'/'+(d.getMonth()+1)+'/'+String((d.getFullYear()+543)%100).padStart(2,'0'); }
+    function todayBE2(){ return fmtBE2Date(new Date()); }
+    // ใส่/แก้ช่อง UPI = ระบบประทับ "คนที่ใส่" + "วันที่ใส่" ให้เอง (ล้าง UPI = ล้างทั้งสองช่อง)
+    function stampUpi(payload){
+      if(!('upi' in payload)) return payload;
+      const has = String(payload.upi||'').trim() !== '';
+      payload.upi_by = has ? (currentUser.name || currentUser.username) : '';
+      payload.upi_at = has ? todayBE2() : '';
+      return payload;
+    }
+
+    // ===== ส่งออกเป็นไฟล์ CSV (Google Sheets เปิดได้ตรงๆ) =====
+    // ponytail: ใช้ CSV แทนการต่อ Google Sheets API — ไม่ต้องตั้ง OAuth/คีย์อะไรเลย
+    //   เพดาน: ต้องอัปโหลดเข้า Drive เองครั้งนึง ถ้าอยากให้เขียนเข้าชีตอัตโนมัติต้องทำ OAuth เพิ่ม
+    function csvCell(v){
+      const s = String(v==null ? '' : v);
+      return /[",\n\r]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+    }
+    function exportCsv(){
+      const cols = DISPLAY_FIELDS.filter(f=>f.key!=='__fix');   // __fix ไม่ใช่คอลัมน์ใน DB
+      const rows = [['ลำดับ', ...cols.map(f=>f.header)]];
+      accountsRows.forEach((row,i)=>{
+        rows.push([i+1, ...cols.map(f=> f.key==='status' ? effectiveStatus(row) : (row[f.key]||''))]);
+      });
+      // ﻿ = BOM บอกว่าเป็น UTF-8 ไม่งั้นภาษาไทยเพี้ยนตอนเปิด
+      const blob = new Blob(['﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n')], { type:'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = document.title.trim().replace(/\s+/g,'-')+'-'+todayBE2().replace(/\//g,'-')+'.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      setStatus('ส่งออก '+accountsRows.length+' แถวแล้ว — ลากไฟล์เข้า Google Drive แล้วเปิดด้วย Google Sheets');
+    }
 
     function canEdit(){ return currentUser && (currentUser.role==='ADMIN' || currentUser.role==='EDITOR'); }
     function isAdmin(){ return currentUser && currentUser.role==='ADMIN'; }
@@ -1051,6 +1309,23 @@
       machineOptions = Array.from(set);
     }
 
+    // ตัวกรองตามคอลัมน์ "การแก้ไข" — '' = ทั้งหมด | 'pending' = ยังไม่ได้แก้ไข | 'done' = แก้ไขแล้ว
+    let fixFilter = '';
+    function renderFixFilterBtn(){
+      const b=document.getElementById('fixFilterBtn');
+      b.textContent = fixFilter==='pending' ? '🔧 ยังไม่ได้แก้ไข' : (fixFilter==='done' ? '✅ แก้ไขแล้ว' : '🔧 สถานะแก้ไข: ทั้งหมด');
+      b.className   = fixFilter==='pending' ? 'btn-red'          : (fixFilter==='done' ? 'btn-primary' : 'btn-gray');
+    }
+    function toggleFixFilter(){
+      fixFilter = fixFilter==='' ? 'pending' : (fixFilter==='pending' ? 'done' : '');
+      renderFixFilterBtn();
+      applySearch();
+    }
+    function matchFixFilter(row){
+      if(!fixFilter) return true;
+      return fixState(row)===fixFilter;
+    }
+
     function applySearch(){
       if(isRoomPage){ renderRoomPage(); return; }
       const keyword=document.getElementById('searchInput').value.trim().toLowerCase();
@@ -1060,11 +1335,11 @@
       let selectedDate=null; if(dateStr){const p=dateStr.split('-'); selectedDate=new Date(+p[0],+p[1]-1,+p[2]);}
       const now=new Date(); const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
 
-      const filterSig = JSON.stringify([keyword, dateStr, chkMachine, chkUseDate, isExpiredPage, expireSort]);
+      const filterSig = JSON.stringify([keyword, dateStr, chkMachine, chkUseDate, isExpiredPage, expireSort, fixFilter]);
       const resetScroll = (filterSig !== lastFilterSig);
       lastFilterSig = filterSig;
 
-      const hasFilter = !!(keyword || dateStr || isExpiredPage);
+      const hasFilter = !!(keyword || dateStr || isExpiredPage || fixFilter);
       if(!hasFilter){
         renderTable(sortedForDisplay(accountsRows), { resetScroll });   // แสดงทั้งหมด — เบาเพราะ virtual scroll
         return;
@@ -1080,6 +1355,7 @@
           });
           if(!ok) return false;
         }
+        if(!matchFixFilter(row)) return false;
         if(isExpiredPage){ const d=extractDate(row.expire_date); if(!d||d.getTime()>today.getTime()) return false; }
         if(selectedDate){ const d=extractDate(row.expire_date); if(!d||d.getTime()!==selectedDate.getTime()) return false; }
         return true;
@@ -1100,6 +1376,7 @@
     function clearSearch(){
       document.getElementById('searchInput').value=''; document.getElementById('searchDateInput').value='';
       document.getElementById('chkMachine').checked=false; document.getElementById('chkUseDate').checked=false;
+      fixFilter=''; renderFixFilterBtn();
       applySearch(); setStatus('ล้างผลค้นหาแล้ว');
     }
     function toggleExpiredPage(){
@@ -1147,6 +1424,7 @@
     }
     function buildVRow(row, idx){
       if(vCtx && vCtx.mode==='room') return buildRoomRow(row, idx);
+      if(vCtx && vCtx.mode==='roomGroup') return buildRoomGroupRow(row, idx);
       const { useTarget, editable } = vCtx;
       const tr=document.createElement('tr');
       tr._row = row;
@@ -1160,13 +1438,18 @@
       DISPLAY_FIELDS.forEach(f=>{
         const td=document.createElement('td');
         td.dataset.fkey = f.key;
+        if(f.key==='__fix'){ td.appendChild(fixBadge(row)); tr.appendChild(td); return; }
         let value=row[f.key]||'';
         if(useTarget&&USE_KEYS.includes(f.key)){ const d=extractDate(value); if(!d||d.getTime()!==useTarget.getTime()) value=''; }
         if(f.key==='status'){ value = effectiveStatus(row); }
         if(USE_KEYS.includes(f.key) && value){ td.innerHTML = useCellHtml(value); }
         else if(f.key==='expire_date' || f.key==='fill_date'){ td.textContent = displayDateBE(value); }
         else { td.textContent=value; }
-        if(USE_KEYS.includes(f.key)) td.classList.add('use-cell');
+        if(USE_KEYS.includes(f.key)){
+          td.classList.add('use-cell');
+          // ลากย้าย/สลับช่อง Use ได้ — เฉพาะช่องที่มีลูกค้าอยู่จริง
+          if(editable && String(value).trim() && String(value).trim()!=='ว่าง') td.draggable=true;
+        }
         else if(f.key==='machine') td.classList.add('machine-cell');
         if(editable) td.classList.add('editable');
         if(f.dateUser){ const c=dateColor(value,true); if(c){ td.style.backgroundColor=c; td.classList.add('cellcolor'); } }
@@ -1178,9 +1461,86 @@
       if(editable){
         const b=document.createElement('button'); b.className='btn-yellow'; b.textContent='แก้ไข';
         b.dataset.edit='1'; tdAct.appendChild(b);
+        const c=document.createElement('button'); c.className='btn-blue'; c.textContent='+วัน';
+        c.dataset.comp='1'; c.title='ชดเชยวัน — บวกวันให้ทุกช่อง Use 1-5 ของแถวนี้';
+        c.style.cssText='padding:5px 10px;font-size:12px;margin-left:4px;box-shadow:0 3px 0 #1971c2;';
+        tdAct.appendChild(c);
       } else { tdAct.textContent='ดูเท่านั้น'; }
       tr.appendChild(tdAct);
       return tr;
+    }
+
+    // ===== คอลัมน์ "การแก้ไข" — ผูกกับงานรอแก้ไข (retry_cases) =====
+    function retryTaskFor(row){ return retryByEmail[String(row.email||'').trim().toLowerCase()] || null; }
+    // สถานะการแก้ไขของหัวบ้าน 1 แถว
+    //   pending = มีงานค้าง | done = แก้เสร็จแล้ว | none = ยังไม่เคยแจ้งงาน
+    // accounts.fix_done_at เก็บไว้ที่ตัวหัวบ้าน → ลบงานที่เสร็จแล้วทิ้ง สถานะยังขึ้น "แก้ไขแล้ว" เหมือนเดิม
+    // ส่วนงานใหม่ที่เพิ่มเข้ามาจะล้างค่านี้ → สถานะกลับไปตามงานใหม่ทันที
+    function fixState(row){
+      const t=retryTaskFor(row);
+      if(t && !t.done_at) return 'pending';
+      if((t && t.done_at) || row.fix_done_at) return 'done';
+      return 'none';
+    }
+    function fixBadge(row){
+      const st=fixState(row), t=retryTaskFor(row);
+      const b=document.createElement('span');
+      b.dataset.fix='1';
+      b.style.cssText='display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;';
+      if(st==='none'){
+        b.textContent='+ แจ้งงาน'; b.title='ยังไม่มีงานแจ้งไว้ — กดเพื่อเพิ่มงานรอแก้ไขของหัวบ้านนี้';
+        b.style.background='#fff3bf'; b.style.color='#5c4400'; b.style.border='1px solid #ffe066';
+      } else if(st==='pending'){
+        b.textContent='ยังไม่ได้แก้ไข'; b.title=(t.note||'')+' — กดเมื่อแก้เสร็จแล้ว';
+        b.style.background='#ffe3e3'; b.style.color='#c92a2a'; b.style.border='1px solid #ff8787';
+      } else {
+        b.textContent='แก้ไขแล้ว';
+        b.title=(t ? (t.note||'')+' — ' : '')+'กดเพื่อกลับไปเป็นยังไม่ได้แก้ไข';
+        b.style.background='#d8f3df'; b.style.color='#2f9e44'; b.style.border='1px solid #69db7c';
+      }
+      return b;
+    }
+    // เขียนสถานะ "แก้ไขแล้ว" ลงตัวหัวบ้าน (ทุกแถวที่อีเมลตรงกัน) — doneAt=null คือกลับเป็นยังไม่แก้
+    async function setAccountFixDone(email, doneAt){
+      const key=String(email||'').trim().toLowerCase();
+      if(!key) return;
+      const { error } = await sb.from('accounts').update({ fix_done_at: doneAt }).ilike('email', key);
+      if(error){ setStatus('อัปเดตสถานะการแก้ไขไม่สำเร็จ: '+error.message); return; }
+      accountsRows.forEach(r=>{ if(String(r.email||'').trim().toLowerCase()===key){ r.fix_done_at=doneAt; markSaved(r.id); } });
+      saveCache(getMaxUpdatedAt());
+    }
+    // โหลดงานทั้งหมดมาทำดัชนีตามอีเมล (แถวหลังทับแถวก่อน = ได้งานล่าสุดของแต่ละอีเมล)
+    async function loadRetryIndex(){
+      const { data, error } = await sb.from('retry_cases').select('id,email,note,due_date,done_at').order('id',{ascending:true});
+      if(error) return;
+      retryByEmail={};
+      (data||[]).forEach(r=>{ const k=String(r.email||'').trim().toLowerCase(); if(k) retryByEmail[k]=r; });
+    }
+    async function toggleFixStatus(row){
+      if(!canEdit()){ showPopup('ไม่มีสิทธิ์','บัญชีนี้ดูข้อมูลเท่านั้น','error'); return; }
+      const st=fixState(row), t=retryTaskFor(row);
+      if(st==='none'){   // ยังไม่มีงาน → เปิดหน้างานรอแก้ไข ใส่อีเมลให้พร้อม
+        openRetryModal();
+        document.getElementById('rcEmail').value=row.email||'';
+        document.getElementById('rcNote').focus({preventScroll:true});
+        return;
+      }
+      const markDone = (st==='pending');
+      const label = t ? '"'+(t.note||'-')+'"' : 'ของ '+(row.email||'');
+      if(!confirm(markDone ? ('งาน '+label+'\nของ '+(row.email||'')+'\n\nแก้เสร็จแล้วใช่ไหม?')
+                           : ('ย้ายงาน '+label+' กลับไปเป็นยังไม่ได้แก้ไข?'))) return;
+      const doneAt = markDone ? new Date().toISOString() : null;
+      // มีงานอยู่ก็อัปเดตงานด้วย (งานถูกลบไปแล้วก็ข้าม เหลือแค่สถานะที่ตัวหัวบ้าน)
+      if(t){
+        const { error }=await sb.from('retry_cases')
+          .update({ done_at:doneAt, done_by:markDone?currentUser.username:null }).eq('id',t.id);
+        if(error){ showPopup('บันทึกไม่สำเร็จ', error.message, 'error'); return; }
+      }
+      await setAccountFixDone(row.email, doneAt);
+      await loadRetryIndex();
+      updateRetryBadge();
+      if(!refreshRowDom(row)) applySearch();
+      setStatus(markDone ? 'ทำเครื่องหมายว่าแก้ไขแล้ว: '+(row.email||'') : 'ย้ายกลับเป็นยังไม่ได้แก้ไข: '+(row.email||''));
     }
 
     // แถวช่องว่าง (spacer) ต้อง override กฎ td เดิม (height/max-height:42px) ไม่งั้นสูงผิด
@@ -1242,11 +1602,11 @@
         if(f.width){ th.style.width=f.width+'px'; th.style.minWidth=f.width+'px'; th.style.maxWidth=f.width+'px'; }
         hr.appendChild(th);
       });
-      const thAct=document.createElement('th'); thAct.textContent='จัดการ'; thAct.style.width='80px'; thAct.style.minWidth='80px'; thAct.style.maxWidth='80px'; hr.appendChild(thAct);
+      const thAct=document.createElement('th'); thAct.textContent='จัดการ'; thAct.style.width='140px'; thAct.style.minWidth='140px'; thAct.style.maxWidth='140px'; hr.appendChild(thAct);
       thead.appendChild(hr);
 
       // ล็อกความกว้างตารางให้เท่าผลรวมคอลัมน์ — กันคอลัมน์ขยับตอน virtual scroll
-      const totalW = 50 + 80 + DISPLAY_FIELDS.reduce((s,f)=>s+(f.width||120),0);
+      const totalW = 50 + 140 + DISPLAY_FIELDS.reduce((s,f)=>s+(f.width||120),0);
       const tableEl = thead.parentElement;
       tableEl.style.width = totalW + 'px';
       tableEl.style.minWidth = totalW + 'px';
@@ -1300,7 +1660,7 @@
       const resolve=(target)=>{
         const td=target.closest('td'); if(!td) return null;
         const tr=td.closest('tr'); if(!tr||!tr._row) return null;
-        const key=td.dataset.fkey; if(!key) return null;
+        const key=td.dataset.fkey; if(!key || key==='__fix') return null;   // __fix ไม่ใช่คอลัมน์ใน DB
         const f=DISPLAY_FIELDS.find(x=>x.key===key); if(!f) return null;
         return { row:tr._row, key, f };
       };
@@ -1315,11 +1675,133 @@
         showCtxMenu(e, r.row[r.key]||'', r.row, r.f);
       });
       tbody.addEventListener('click', e=>{
+        const fx=e.target.closest('[data-fix]');
+        if(fx){ const tr=fx.closest('tr'); if(tr&&tr._row) toggleFixStatus(tr._row); return; }
+        const cbtn=e.target.closest('button[data-comp]');
+        if(cbtn){ const tr=cbtn.closest('tr'); if(tr&&tr._row) compensateDays(tr._row); return; }
         const btn=e.target.closest('button[data-edit]');
         if(btn){ const tr=btn.closest('tr'); if(tr&&tr._row) openEditModal(tr._row); return; }
         const tr=e.target.closest('tr');
         if(tr && tr._row){ selectedRowId=(selectedRowId===tr._row.id)?null:tr._row.id; updateRowSelection(); }
       });
+
+      // ===== ลากย้ายช่อง Use 1-5 ซ้าย-ขวาในแถวเดียวกัน (ข้ามแถวไม่ได้ = สลับค่ากัน ไม่มีข้อมูลหาย) =====
+      let dragSrc=null, dragHintTd=null;
+      const clearHint=()=>{ if(dragHintTd){ dragHintTd.classList.remove('drop-hint'); dragHintTd=null; } };
+      tbody.addEventListener('dragstart', e=>{
+        const r=resolve(e.target);
+        if(!r || !USE_KEYS.includes(r.key) || !canEdit()){ e.preventDefault(); return; }
+        dragSrc={ id:r.row.id, key:r.key };
+        e.dataTransfer.effectAllowed='move';
+        e.dataTransfer.setData('text/plain', r.row[r.key]||'');   // จำเป็นสำหรับ Firefox
+      });
+      tbody.addEventListener('dragover', e=>{
+        if(!dragSrc) return;
+        const td=e.target.closest('td');
+        // วางได้เฉพาะช่อง Use ใน "แถวเดียวกัน" เท่านั้น (ย้ายซ้าย-ขวา ไม่ให้ข้ามแถว)
+        const tr=td ? td.closest('tr') : null;
+        if(!td || !USE_KEYS.includes(td.dataset.fkey||'') || !tr || !tr._row || tr._row.id!==dragSrc.id){ clearHint(); return; }
+        e.preventDefault();
+        e.dataTransfer.dropEffect='move';
+        if(dragHintTd!==td){ clearHint(); dragHintTd=td; td.classList.add('drop-hint'); }
+      });
+      tbody.addEventListener('drop', e=>{
+        e.preventDefault(); clearHint();
+        const src=dragSrc; dragSrc=null;
+        if(!src) return;
+        const r=resolve(e.target);
+        if(!r || !USE_KEYS.includes(r.key) || r.row.id!==src.id) return;
+        swapUseCells(src.id, src.key, r.key);
+      });
+      tbody.addEventListener('dragend', ()=>{ dragSrc=null; clearHint(); });
+    }
+
+    // ===== ชดเชยวัน — บวก/ลบวันให้ทุกช่อง Use 1-5 ของแถวเดียว =====
+    // คืนค่าใหม่ของช่อง Use (คงร้าน+ชื่อเดิม เปลี่ยนแค่วันที่) หรือ null ถ้าช่องนั้นไม่มีวันที่
+    function addDaysToUseValue(value, days){
+      const p = parseUseValue(value);
+      if(!p.date) return null;
+      const d = extractDate(p.date);
+      if(!d) return null;
+      d.setDate(d.getDate() + days);
+      return joinUseValue(p.store, p.name, fmtBE2Date(d));
+    }
+    async function compensateDays(row){
+      if(!canEdit()){ showPopup('ไม่มีสิทธิ์','บัญชีนี้ดูข้อมูลเท่านั้น','error'); return; }
+      const input = prompt('ชดเชยวันให้ช่อง Use 1-5 ของ\n'+(row.email||('ID '+row.id))+'\n\nใส่จำนวนวัน (ใส่ค่าติดลบ = ลดวัน)', '');
+      if(input===null) return;
+      const days = parseInt(String(input).trim(), 10);
+      if(!Number.isFinite(days) || days===0){
+        showPopup('จำนวนวันไม่ถูกต้อง','กรุณาใส่เป็นตัวเลข เช่น 3 หรือ -2','error'); return;
+      }
+
+      const payload={}, preview=[], msgs=[];
+      USE_KEYS.forEach((k,i)=>{
+        const nv = addDaysToUseValue(row[k], days);
+        if(nv!==null && nv!==String(row[k]||'').trim()){
+          payload[k]=nv;
+          preview.push('Use '+(i+1)+': '+String(row[k]).trim()+'  →  '+nv);
+          const p = parseUseValue(nv);
+          msgs.push({ slot:i+1, name:p.name, date:p.date });
+        }
+      });
+      if(!preview.length){
+        showPopup('ไม่มีช่องให้ชดเชย','ช่อง Use 1-5 ของหัวบ้านนี้ไม่มีวันที่ให้บวก\n(ช่องว่าง/เตะแล้ว จะถูกข้าม)','error'); return;
+      }
+      if(!confirm((days>0?'บวก ':'ลด ')+Math.abs(days)+' วัน ให้ '+preview.length+' ช่อง\n\n'+preview.join('\n'))) return;
+
+      const oldRow = accountsRows.find(r=>r.id===row.id);
+      const { error } = await sb.from('accounts').update(payload).eq('id', row.id);
+      if(error){ showPopup('ชดเชยวันไม่สำเร็จ', error.message, 'error'); return; }
+      markSaved(row.id);
+      const newRow = Object.assign({}, oldRow||row, payload);
+      if(oldRow) await writeAudit('UPDATE', row.id, oldRow, newRow);
+      const i = accountsRows.findIndex(r=>r.id===row.id);
+      if(i>=0) accountsRows[i]=newRow;
+      syncVRow(row.id);
+      saveCache(getMaxUpdatedAt());
+      // บันทึกรายการชดเชยไว้ให้ส่วนขยาย (extension) ขึ้นปุ่มชุดข้อความตรงช่องนั้น
+      // เฉพาะตอนบวกวันจริง (ค่าติดลบ = แก้วันย้อนหลัง ไม่ใช่การชดเชย)
+      if(days>0){
+        const { error:cErr } = await sb.from('compensations').insert(msgs.map(m=>({
+          account_id: row.id, use_key: USE_KEYS[m.slot-1], days: days,
+          new_date: m.date, tenant: m.name||'', created_by: currentUser.username
+        })));
+        if(cErr) setStatus('ชดเชยวันสำเร็จ แต่บันทึกรายการให้ส่วนขยายไม่สำเร็จ: '+cErr.message);
+      }
+      if(!refreshRowDom(newRow)) applySearch();
+      updateSummary();
+      setStatus('ชดเชย '+days+' วัน ให้ '+preview.length+' ช่อง ของ '+(row.email||('ID '+row.id))
+        + ' แล้ว — ชุดข้อความรอกดที่ส่วนขยาย');
+    }
+
+    // สลับค่าช่อง Use ภายในแถวเดียวกัน (ซ้าย-ขวา เท่านั้น — ห้ามข้ามแถว)
+    // ปลายทางว่าง = ย้ายเฉยๆ, ปลายทางมีคน = สลับกัน (ไม่ทับข้อมูลใครหาย)
+    async function swapUseCells(id, srcKey, tgtKey){
+      if(!canEdit() || srcKey===tgtKey) return;
+      const row=accountsRows.find(r=>r.id===id);
+      if(!row) return;
+      const sv=String(row[srcKey]||'').trim();
+      const tv=String(row[tgtKey]||'').trim();
+      if(!sv || sv==='ว่าง') return;
+      const label=k=>'Use '+(USE_KEYS.indexOf(k)+1);
+      let msg='ย้าย "'+sv+'"\nจาก '+label(srcKey)+' → '+label(tgtKey)+'\n('+(row.email||('ID '+row.id))+')';
+      if(tv && tv!=='ว่าง') msg+='\n\nช่องปลายทางมี "'+tv+'"\n→ จะสลับมาไว้ที่ '+label(srcKey)+' แทน';
+      if(!confirm(msg)) return;
+
+      const payload={}; payload[srcKey]=tv; payload[tgtKey]=sv;
+      const { error }=await sb.from('accounts').update(payload).eq('id', id);
+      if(error){ showPopup('ย้ายไม่สำเร็จ', error.message, 'error'); return; }
+      markSaved(id);
+      const newRow=Object.assign({}, row, payload);
+      await writeAudit('UPDATE', id, row, newRow);
+      const i=accountsRows.findIndex(r=>r.id===id);
+      if(i>=0) accountsRows[i]=newRow;
+      syncVRow(id);
+      if(!refreshRowDom(newRow)) applySearch();
+      saveCache(getMaxUpdatedAt());
+      updateSummary();
+      setStatus('ย้าย "'+sv+'" ไป '+label(tgtKey)+' แล้ว');
     }
 
     function dateColor(value,checkWaiting){
@@ -1402,6 +1884,11 @@
           return;
         }
       }
+      // UPI เปลี่ยนค่า = ประทับคนใส่/วันที่ให้ใหม่ (ค่าเดิมไม่ถูกแตะถ้าไม่ได้แก้ UPI)
+      const oldUpi = currentMode==='edit'
+        ? String((accountsRows.find(r=>r.id===editingId)||{}).upi||'').trim() : '';
+      if(String(payload.upi||'').trim() !== oldUpi) stampUpi(payload); else delete payload.upi;
+
       const btn=document.getElementById('saveBtn'); btn.disabled=true; btn.textContent='กำลังบันทึก...';
       let error;
       if(currentMode==='add'){
@@ -1514,6 +2001,27 @@
       if(editingUserId){
         const newPassword=document.getElementById('uPassword').value;
         if(newPassword && newPassword.length < 6){ showUserAlert('รหัสผ่านต้องอย่างน้อย 6 ตัวอักษร (หรือเว้นว่างถ้าไม่เปลี่ยน)'); return; }
+        // เปลี่ยน "ชื่อ" = เปลี่ยนชื่อเครื่อง → ไล่แก้ช่อง "เครื่อง" ในหัวบ้านทุกแถวให้ตามด้วย
+        // (ช่องเครื่องเก็บเป็นชื่อ ถ้าไม่แก้ตาม หัวบ้านเดิมจะค้างชื่อเก่า กรอง/เบิกห้องจะหาไม่เจอ)
+        // ทำก่อนบันทึกผู้ใช้: ถ้าเปลี่ยนไม่ผ่านก็ยังไม่มีอะไรถูกแก้ / ถ้าบันทึกผู้ใช้พลาดทีหลัง กดบันทึกซ้ำได้ (ชื่อเครื่องเปลี่ยนไปแล้วจะไม่ถูกแก้ซ้ำ)
+        const oldName = String((userRows.find(u=>u.id===editingUserId)||{}).name||'').trim();
+        let renamedRows = 0;
+        if(oldName && name && oldName !== name){
+          const affected = accountsRows.filter(r=>String(r.machine||'').split(',').map(s=>s.trim()).includes(oldName)).length;
+          if(affected > 0){
+            if(!confirm('เปลี่ยนชื่อ "'+oldName+'" → "'+name+'"\n\nช่อง "เครื่อง" ของหัวบ้าน '+affected+' แถวจะถูกเปลี่ยนเป็น "'+name+'" ด้วย\nยืนยัน?')) return;
+          }
+          const saveBtnR=document.getElementById('uSaveBtn'); saveBtnR.disabled=true; saveBtnR.textContent='กำลังเปลี่ยนชื่อเครื่อง...';
+          const { data:rn, error:rnErr } = await sb.rpc('rename_machine', { p_old: oldName, p_new: name });
+          saveBtnR.disabled=false; saveBtnR.textContent='บันทึกการแก้ไข';
+          if(rnErr){
+            showUserAlert('เปลี่ยนชื่อเครื่องในหัวบ้านไม่สำเร็จ ยังไม่ได้บันทึกอะไร: '+rnErr.message
+              +'\n(ถ้าเพิ่งใช้ครั้งแรก ให้รัน add_rename_machine.sql ใน Supabase ก่อน)');
+            return;
+          }
+          renamedRows = (rn && rn.renamed) || 0;
+        }
+
         const saveBtn=document.getElementById('uSaveBtn'); saveBtn.disabled=true; saveBtn.textContent='กำลังบันทึก...';
 
         const { error }=await sb.from('user_profiles').update({ username, name, role, status, updated_by: currentUser.username, updated_at: new Date().toISOString() }).eq('id', editingUserId);
@@ -1531,7 +2039,11 @@
 
         saveBtn.disabled=false; saveBtn.textContent='บันทึกการแก้ไข';
         resetUserForm(); await loadUsers(); await loadMachineOptions();
-        showPopup('บันทึกสำเร็จ', newPassword ? 'แก้ไขผู้ใช้ + เปลี่ยนรหัสผ่านแล้ว' : 'แก้ไขผู้ใช้แล้ว','success');
+        if(renamedRows > 0) await deltaSync(getMaxUpdatedAt(), { detectDeletes:false });   // ดึงหัวบ้านที่เพิ่งเปลี่ยนชื่อเครื่อง
+        showPopup('บันทึกสำเร็จ',
+          (newPassword ? 'แก้ไขผู้ใช้ + เปลี่ยนรหัสผ่านแล้ว' : 'แก้ไขผู้ใช้แล้ว')
+          + (renamedRows > 0 ? '\nเปลี่ยนชื่อเครื่องในหัวบ้าน '+renamedRows+' แถวแล้ว' : ''),
+          'success');
       } else {
         const password=document.getElementById('uPassword').value;
         if(!password || password.length < 6){ showUserAlert('กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร'); return; }
@@ -1628,6 +2140,649 @@
       });
     }
 
+    /* ===== งานรอแก้ไข (ยังใช้ตารางเดิมชื่อ retry_cases — ไม่ต้องย้ายข้อมูล)
+       note = งานที่ต้องแก้, email = หัวบ้าน/ลูกค้า (ไม่บังคับ), due_date = กำหนดเสร็จ
+       ครั้งแรกต้องรัน SQL นี้ใน Supabase → SQL Editor:
+
+       create table if not exists retry_cases (
+         id bigint generated always as identity primary key,
+         email text not null,
+         note text default '',
+         due_date timestamptz not null,
+         notified boolean not null default false,
+         done_at timestamptz,
+         done_by text,
+         created_by text default '',
+         created_at timestamptz default now()
+       );
+       alter table retry_cases enable row level security;
+       create policy "auth all retry" on retry_cases
+         for all to authenticated using (true) with check (true);
+
+       ถ้าเคยสร้างตารางไว้แล้ว ให้รันอันนี้แทน (เพิ่มคอลัมน์ที่ขาด):
+       alter table retry_cases
+         alter column due_date type timestamptz using due_date::timestamptz,
+         add column if not exists notified boolean not null default false,
+         add column if not exists done_at timestamptz,
+         add column if not exists done_by text;
+    */
+    let retryRows = [];
+    // แปลง Date → ค่าที่ช่อง datetime-local ใช้ได้ (เวลาท้องถิ่น ไม่ใช่ UTC)
+    function toDateTimeInput(d){ const p=n=>String(n).padStart(2,'0');
+      return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes()); }
+    function retryDefaultDate(){ return toDateTimeInput(new Date()).slice(0,10); }
+    // ปุ่มข้อความสำเร็จรูป → ใส่ในช่อง "งานที่ต้องแก้" (พิมพ์ต่อ/แก้เองได้)
+    function rcSetNote(text){
+      const el=document.getElementById('rcNote'); el.value=text; el.focus({preventScroll:true});
+    }
+    // due_date เก็บเป็น timestamptz → โชว์เป็น ว/ด/พ.ศ. 2 หลัก (ใส่ withTime=true ถ้าต้องการเวลาด้วย)
+    function retryDueBE(iso, withTime){ if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return '';
+      const p=n=>String(n).padStart(2,'0');
+      return d.getDate()+'/'+(d.getMonth()+1)+'/'+p((d.getFullYear()+543)%100)
+        + (withTime ? ' '+p(d.getHours())+':'+p(d.getMinutes()) : ''); }
+    function retryIsDue(iso){ if(!iso) return false; const d=new Date(iso);
+      return !isNaN(d) && d.getTime() <= Date.now(); }
+    // ป้ายแดง = งานที่ยังไม่แก้ + ถึงกำหนดแล้ว (นับทุกวัน ไม่ใช่เฉพาะวันที่กำลังดู)
+    async function updateRetryBadge(){
+      const { count } = await sb.from('retry_cases').select('id',{ count:'exact', head:true })
+        .is('done_at', null).lte('due_date', new Date().toISOString());
+      const b=document.getElementById('retryBadge');
+      if(b){ b.textContent=count||0; b.style.display = (count>0) ? 'inline-block' : 'none'; }
+    }
+    // ===== ตัวเลือกวันที่ของรายการงาน =====
+    function rcDayValue(){
+      const el=document.getElementById('rcDay');
+      if(!el.value) el.value = toDateTimeInput(new Date()).slice(0,10);
+      return el.value;
+    }
+    function rcDayToday(){
+      rcAllPending=false;
+      document.getElementById('rcDay').value = toDateTimeInput(new Date()).slice(0,10);
+      loadRetryCases();
+    }
+    // เลือกวันเอง = ออกจากโหมดทุกวันโดยอัตโนมัติ
+    function rcDayPick(){ rcAllPending=false; loadRetryCases(); }
+    // โหมด "งานค้างทุกวัน" — รวมงานที่ยังไม่แก้ทุกวันไว้ที่เดียว ซ่อนตารางงานที่เสร็จแล้ว
+    let rcAllPending = false;
+    function rcToggleAll(){
+      rcAllPending=!rcAllPending;
+      const b=document.getElementById('rcAllBtn');
+      b.textContent = rcAllPending ? '📅 กลับไปดูรายวัน' : '📋 งานค้างทุกวัน';
+      b.className = rcAllPending ? 'btn-gray' : 'btn-yellow';
+      loadRetryCases();
+    }
+    function showRetryAlert(m){ const el=document.getElementById('retryModalAlert'); el.textContent=m; el.className='modal-alert show'; }
+    function hideRetryAlert(){ const el=document.getElementById('retryModalAlert'); el.textContent=''; el.className='modal-alert'; }
+    function openRetryModal(){
+      hideRetryAlert();
+      if(rcAllPending) rcToggleAll();   // เปิดใหม่ = เริ่มที่โหมดรายวันเสมอ
+      document.getElementById('rcSearch').value='';
+      document.getElementById('rcDate').value = retryDefaultDate();
+      document.getElementById('rcDay').value = toDateTimeInput(new Date()).slice(0,10);
+      document.getElementById('retryModalBackdrop').style.display='block';
+      loadRetryCases();
+    }
+    function closeRetryModal(){ document.getElementById('retryModalBackdrop').style.display='none'; }
+    // ค้นหาอีเมล — หน่วง 300ms กันยิง DB ทุกตัวอักษร
+    let rcSearchTimer=null;
+    function rcSearchInput(){ clearTimeout(rcSearchTimer); rcSearchTimer=setTimeout(loadRetryCases, 300); }
+    function rcSearchKeyword(){ return document.getElementById('rcSearch').value.trim(); }
+    function rcClearSearch(){ document.getElementById('rcSearch').value=''; loadRetryCases(); }
+
+    // ค้นหา = ข้ามตัวกรองวัน หาทุกวัน / ปกติ = เฉพาะวันที่เลือก / โหมดทุกวัน = งานที่ยังไม่เสร็จทั้งหมด
+    async function loadRetryCases(){
+      let q = sb.from('retry_cases').select('*');
+      const kw = rcSearchKeyword();
+      if(kw){
+        q = q.ilike('email', '%'+kw+'%');
+      } else if(rcAllPending){
+        q = q.is('done_at', null);
+      } else {
+        const p=rcDayValue().split('-');
+        const start=new Date(+p[0],+p[1]-1,+p[2]);
+        const end=new Date(start); end.setDate(end.getDate()+1);
+        q = q.gte('due_date', start.toISOString()).lt('due_date', end.toISOString());
+      }
+      const { data, error } = await q.order('due_date',{ascending:true}).order('id',{ascending:true});
+      if(error){ showRetryAlert('โหลดไม่สำเร็จ: '+error.message+'\n(ถ้าเพิ่งใช้ครั้งแรก ให้รัน SQL สร้าง/อัปเดตตาราง retry_cases ก่อน — ดูคอมเมนต์เหนือฟังก์ชันนี้ในโค้ด)'); return; }
+      retryRows=data||[]; renderRetryTable(); updateRetryBadge();
+      // งานเปลี่ยน → อัปเดตดัชนี แล้ววาดคอลัมน์ "การแก้ไข" ในตารางหลักใหม่
+      await loadRetryIndex();
+      if(accountsRows.length && !isRoomPage) applySearch();
+    }
+    // แถวว่าง (ใช้ตอนไม่มีงานในวันนั้น)
+    function retryEmptyRow(tbody, cols, text){
+      const tr=document.createElement('tr'); const td=document.createElement('td');
+      td.colSpan=cols; td.textContent=text; td.style.color='#888'; tr.appendChild(td); tbody.appendChild(tr);
+    }
+    function renderRetryTable(){
+      const pend=document.getElementById('retryTableBody'), done=document.getElementById('retryDoneBody');
+      pend.innerHTML=''; done.innerHTML='';
+      const pendRows=retryRows.filter(r=>!r.done_at), doneRows=retryRows.filter(r=>r.done_at);
+      document.getElementById('rcPendingCount').textContent=pendRows.length;
+      document.getElementById('rcDoneCount').textContent=doneRows.length;
+      // โหมดทุกวัน = โชว์แค่งานค้าง ซ่อนตารางงานที่เสร็จแล้ว / ตอนค้นหา = โชว์ทั้งสองส่วน
+      const searching = !!rcSearchKeyword();
+      const hideDone = rcAllPending && !searching;
+      document.getElementById('rcPendingHead').firstChild.textContent =
+        searching ? '🔧 ผลค้นหา — ยังไม่แก้ไข (' : (rcAllPending ? '🔧 งานค้างทุกวัน (' : '🔧 ยังไม่แก้ไข (');
+      document.getElementById('rcDoneHead').firstChild.textContent =
+        searching ? '✅ ผลค้นหา — แก้เสร็จแล้ว (' : '✅ แก้เสร็จแล้ว (';
+      document.getElementById('rcDoneHead').style.display = hideDone ? 'none' : '';
+      document.getElementById('rcDoneWrap').style.display = hideDone ? 'none' : '';
+
+      if(pendRows.length===0) retryEmptyRow(pend, 5,
+        searching ? 'ไม่พบงานค้างของอีเมลนี้' : (rcAllPending ? 'ไม่มีงานค้างเลย 🎉' : 'ไม่มีงานค้างของวันนี้ 🎉'));
+      pendRows.forEach(r=>{
+        const tr=document.createElement('tr');
+        [r.note, r.email, retryDueBE(r.due_date), userNameMap[r.created_by]||r.created_by||''].forEach((v,i)=>{
+          const td=document.createElement('td'); td.textContent=v||'';
+          if(i===2 && retryIsDue(r.due_date)){ td.style.backgroundColor='#ff0000'; td.classList.add('cellcolor'); }
+          tr.appendChild(td);
+        });
+        const tdAct=document.createElement('td'); tdAct.className='actions';
+        if(canEdit()){
+          const b=document.createElement('button'); b.className='btn-primary'; b.textContent='เสร็จแล้ว'; b.onclick=()=>finishRetryCase(r);
+          tdAct.appendChild(b);
+        } else tdAct.textContent='ดูเท่านั้น';
+        tr.appendChild(tdAct); pend.appendChild(tr);
+      });
+
+      if(doneRows.length===0) retryEmptyRow(done, 5, searching ? 'ไม่พบงานที่เสร็จแล้วของอีเมลนี้' : 'ยังไม่มีงานที่แก้เสร็จในวันนี้');
+      doneRows.forEach(r=>{
+        const tr=document.createElement('tr');
+        [r.note, r.email, retryDueBE(r.due_date), retryDueBE(r.done_at, true)].forEach(v=>{
+          const td=document.createElement('td'); td.textContent=v||''; tr.appendChild(td);
+        });
+        const tdAct=document.createElement('td'); tdAct.className='actions';
+        tdAct.style.textAlign='left';
+        tdAct.textContent=(userNameMap[r.done_by]||r.done_by||'-')+' ';
+        if(canEdit()){
+          const b=document.createElement('button'); b.className='btn-gray'; b.textContent='↩ กลับมาแก้'; b.title='ย้ายกลับไปที่งานยังไม่แก้ไข'; b.onclick=()=>reopenRetryCase(r);
+          const del=document.createElement('button'); del.className='btn-red'; del.textContent='🗑 ลบ'; del.title='ลบงานนี้ถาวร'; del.onclick=()=>deleteRetryCase(r);
+          [b,del].forEach(x=>{ x.style.padding='5px 10px'; x.style.fontSize='12px'; x.style.marginLeft='4px'; });
+          tdAct.appendChild(b); tdAct.appendChild(del);
+        }
+        tr.appendChild(tdAct); done.appendChild(tr);
+      });
+    }
+    async function saveRetryCase(){
+      hideRetryAlert();
+      if(!canEdit()){ showRetryAlert('บัญชีนี้ดูข้อมูลเท่านั้น'); return; }
+      const email=document.getElementById('rcEmail').value.trim();
+      const note=document.getElementById('rcNote').value.trim();
+      const due=document.getElementById('rcDate').value;
+      if(!note){ showRetryAlert('กรุณาใส่งานที่ต้องแก้'); return; }
+      if(!due){ showRetryAlert('กรุณาเลือกกำหนดเสร็จ'); return; }
+      const btn=document.getElementById('rcSaveBtn'); btn.disabled=true;
+
+      // กันเพิ่มซ้ำ: อีเมลเดียวกันมีงานที่ยังไม่เสร็จค้างอยู่แล้ว = ไม่ให้เพิ่มอีก
+      // (งานที่กดเสร็จแล้วไม่นับ — หัวบ้านเดิมมีปัญหาใหม่ทีหลังยังเพิ่มได้ตามปกติ)
+      if(email){
+        const { data:dup } = await sb.from('retry_cases').select('note,due_date')
+          .is('done_at', null).ilike('email', email).limit(1);
+        if(dup && dup.length){
+          btn.disabled=false;
+          showRetryAlert('อีเมลนี้มีงานค้างอยู่แล้ว: "'+(dup[0].note||'-')+'" (กำหนด '+retryDueBE(dup[0].due_date)+')\n'
+            + 'ให้ไปกด "เสร็จแล้ว" ที่งานเดิมก่อน หรือใช้ช่องค้นหาอีเมลเพื่อดูงานเดิม');
+          return;
+        }
+      }
+      // เก็บเป็นต้นวัน (00:00) แบบ ISO — สรุปงานรอบ 8 โมงเช้าจะได้นับงานของวันนั้นด้วย
+      const { error }=await sb.from('retry_cases').insert({
+        email, note, due_date:new Date(due+'T00:00:00').toISOString(), created_by:currentUser.username });
+      btn.disabled=false;
+      if(error){ showRetryAlert('บันทึกไม่สำเร็จ: '+error.message); return; }
+      // งานใหม่ = ล้างสถานะ "แก้ไขแล้ว" เดิมของหัวบ้านนี้ทิ้ง สถานะจะได้ตามงานใหม่
+      await setAccountFixDone(email, null);
+      document.getElementById('rcEmail').value=''; document.getElementById('rcNote').value='';
+      document.getElementById('rcDay').value=due.slice(0,10);   // เด้งไปดูวันของงานที่เพิ่งเพิ่ม
+      document.getElementById('rcDate').value=retryDefaultDate();
+      await loadRetryCases();
+    }
+    // เสร็จแล้ว = ทำเครื่องหมาย ไม่ลบทิ้ง (จะได้ย้อนดูงานที่ทำไปแล้วในแต่ละวันได้)
+    async function finishRetryCase(r){
+      if(!confirm('งาน "'+(r.note||r.email)+'" แก้เรียบร้อยแล้ว?')) return;
+      const doneAt=new Date().toISOString();
+      const { error }=await sb.from('retry_cases')
+        .update({ done_at:doneAt, done_by:currentUser.username }).eq('id',r.id);
+      if(error){ showRetryAlert('บันทึกไม่สำเร็จ: '+error.message); return; }
+      await setAccountFixDone(r.email, doneAt);
+      await loadRetryCases();
+    }
+    async function deleteRetryCase(r){
+      if(!confirm('ลบงาน "'+(r.note||r.email)+'" ออกถาวร?\nลบแล้วจะไม่เห็นในประวัติของวันนั้นอีก')) return;
+      const { error }=await sb.from('retry_cases').delete().eq('id',r.id);
+      if(error){ showRetryAlert('ลบไม่สำเร็จ: '+error.message); return; }
+      await loadRetryCases();
+    }
+    async function reopenRetryCase(r){
+      const { error }=await sb.from('retry_cases').update({ done_at:null, done_by:null }).eq('id',r.id);
+      if(error){ showRetryAlert('ย้ายกลับไม่สำเร็จ: '+error.message); return; }
+      await setAccountFixDone(r.email, null);
+      await loadRetryCases();
+    }
+
+    /* ===== แจ้งเตือนกลุ่มไลน์ =====
+       ทำงานฝั่ง Supabase ทั้งหมด ไม่มีโค้ดส่งไลน์ในหน้าเว็บ:
+       pg_cron เรียก Edge Function 'line-notify' วันละ 2 รอบ (8 โมงเช้า / 5 โมงเย็น เวลาไทย)
+       → สรุปงานที่ยังไม่กดเสร็จ และถึงกำหนดแล้ว → ส่งเป็นข้อความเดียวเข้ากลุ่ม
+       ตั้งค่า: supabase/functions/line-notify/index.ts + setup_line_cron.sql */
+
+    /* ===== ต่ออายุอัตโนมัติ =====
+       เงื่อนไข 3 ข้อ ต้องครบถึงจะต่อให้: ถึง/เลยวันหมดอายุแล้ว + ช่อง UPI มีข้อมูล + เครดิตพอ (>= 389)
+       ต่อ = เลื่อนวันหมดอายุไปอีก 1 เดือน (นับจากวันหมดอายุเดิม = รอบบิลไม่เพี้ยน) แล้วหักเครดิต 389
+
+       ตัวที่ทำงานจริงอยู่ที่ Supabase (ฟังก์ชัน auto_renew_upi + cron ทุกวัน 9 โมงเช้า)
+       → ทำงานเองแม้ไม่มีใครเปิดเว็บ และเปิดหลายเครื่องพร้อมกันก็ไม่หักเครดิตซ้ำ
+       ปุ่มในเมนูแค่เรียกฟังก์ชันตัวเดียวกันให้ทำทันที (ไม่ต้องรอถึง 9 โมง) — ดู setup_auto_renew.sql */
+    function addMonthsKeepDay(d, n){
+      const day=d.getDate();
+      const nd=new Date(d.getFullYear(), d.getMonth()+n, 1);
+      const last=new Date(nd.getFullYear(), nd.getMonth()+1, 0).getDate();
+      nd.setDate(Math.min(day, last));   // 31 ม.ค. + 1 เดือน = 28/29 ก.พ.
+      return nd;
+    }
+    function autoRenewCandidates(){
+      const now=new Date(); const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+      return accountsRows.filter(r=>{
+        const d=extractDate(r.expire_date);
+        if(!d || d.getTime() > today.getTime()) return false;              // ยังไม่ถึงวันหมดอายุ
+        if(String(r.upi||'').trim()==='') return false;                    // ไม่มี UPI
+        const c=parseCredit(r.credit);
+        return Number.isFinite(c) && c >= EXPIRE_CREDIT_DEDUCT;            // เครดิตไม่พอ
+      });
+    }
+    async function runAutoRenew(){
+      if(!canEdit()){ showPopup('ไม่มีสิทธิ์','บัญชีนี้ดูข้อมูลเท่านั้น','error'); return; }
+      const list = autoRenewCandidates();
+      if(!list.length){
+        showPopup('ไม่มีรายการให้ต่ออายุ',
+          'ต้องครบ 3 เงื่อนไข: ถึงวันหมดอายุแล้ว + มี UPI + เครดิตพอ ('+EXPIRE_CREDIT_DEDUCT+' ขึ้นไป)','error');
+        return;
+      }
+      const totalCredit = EXPIRE_CREDIT_DEDUCT*list.length;
+      const preview = list.slice(0,10).map(r=>{
+        const nd = addMonthsKeepDay(extractDate(r.expire_date), 1);
+        return '• '+(r.email||('ID '+r.id))+': '+displayDateBE(r.expire_date)+' → '+fmtBE2Date(nd);
+      }).join('\n');
+      if(!confirm('ต่ออายุอัตโนมัติ '+list.length+' หัวบ้าน (+1 เดือน)\n'
+        + 'หักเครดิตรวม '+totalCredit.toLocaleString('en-US')+' ('+EXPIRE_CREDIT_DEDUCT+' ต่อหัวบ้าน)\n\n'
+        + preview + (list.length>10 ? '\n… และอีก '+(list.length-10)+' รายการ' : ''))) return;
+
+      // ให้ฝั่งเซิร์ฟเวอร์ทำ (ตรรกะเดียวกับที่ cron ใช้) แล้วค่อยดึงข้อมูลใหม่มาแสดง
+      setStatus('กำลังต่ออายุ...');
+      const { data, error } = await sb.rpc('auto_renew_upi');
+      if(error){
+        showPopup('ต่ออายุไม่สำเร็จ', error.message+'\n(ถ้ายังไม่ได้ติดตั้ง ให้รัน setup_auto_renew.sql ก่อน)','error');
+        return;
+      }
+      const done = (data && data.renewed) || 0;
+      await deltaSync(getMaxUpdatedAt(), { detectDeletes:false });   // ดึงแถวที่เซิร์ฟเวอร์เพิ่งแก้
+      showPopup('ต่ออายุสำเร็จ',
+        'ต่ออายุแล้ว '+done+' หัวบ้าน (+1 เดือน)\nหักเครดิตรวม '+(EXPIRE_CREDIT_DEDUCT*done).toLocaleString('en-US'),
+        'success');
+    }
+
+    // เมนูรวมของ UPI — popup เล็กเด้งใต้ปุ่ม (ชิดขอบจอแล้วเลื่อนเข้ามาให้เอง)
+    function openUpiMenu(e){
+      const menu=document.getElementById('upiMenu');
+      const r=(e && e.currentTarget) ? e.currentTarget.getBoundingClientRect() : {left:20,bottom:60};
+      menu.style.display='block';
+      const w=menu.offsetWidth, h=menu.offsetHeight;
+      let x=r.left, y=r.bottom+6;
+      if(x+w > window.innerWidth-8)  x = window.innerWidth-w-8;
+      if(y+h > window.innerHeight-8) y = Math.max(8, r.top-h-6);   // ล่างไม่พอ → เด้งขึ้นบนแทน
+      menu.style.left=x+'px'; menu.style.top=y+'px';
+    }
+    function closeUpiMenu(){ document.getElementById('upiMenu').style.display='none'; }
+    // คลิกที่อื่น/เลื่อนจอ = ปิดเมนู (ไม่นับคลิกที่ตัวปุ่มกับในเมนูเอง)
+    document.addEventListener('click', e=>{
+      if(e.target.closest('#upiMenu') || e.target.closest('[data-upimenu]')) return;
+      closeUpiMenu();
+    });
+    window.addEventListener('scroll', closeUpiMenu, true);
+
+    /* ===== เช็ค UPI ↔ หัวบ้าน — อ่านจากช่อง UPI ในตารางหัวบ้านโดยตรง ===== */
+    let badUpiSet = new Set();   // UPI ที่อยู่ในรายการเสีย (ตัวพิมพ์เล็ก)
+    async function openUpiCheckModal(){
+      document.getElementById('upiCheckSearch').value='';
+      document.getElementById('upiCheckDupOnly').checked=false;
+      upiCheckDetail=null;   // เปิดใหม่ = เริ่มที่รายการ UPI เสมอ
+      document.getElementById('upiCheckModalBackdrop').style.display='block';
+      renderUpiCheck();                     // วาดจากข้อมูลในเครื่องก่อน ไม่ต้องรอเน็ต
+      const { data } = await sb.from('bad_upi').select('upi');
+      badUpiSet = new Set((data||[]).map(r=>String(r.upi||'').trim().toLowerCase()).filter(Boolean));
+      renderUpiCheck();                     // ได้รายการเสียแล้วค่อยวาดซ้ำพร้อมป้าย
+    }
+    function closeUpiCheckModal(){ document.getElementById('upiCheckModalBackdrop').style.display='none'; }
+    let upiCheckDetail = null;   // null = รายการ UPI / มีค่า = เจาะดูว่า UPI นี้อยู่หัวบ้านไหนบ้าง
+    function upiCheckOpen(key){ upiCheckDetail=key; renderUpiCheck(); }
+    function upiCheckBack(){ upiCheckDetail=null; renderUpiCheck(); }
+
+    function upiTag(text,bg,color,border){
+      const s=document.createElement('span');
+      s.textContent=text;
+      s.style.cssText='display:inline-block;margin-right:4px;padding:2px 9px;border-radius:11px;font-size:11px;font-weight:800;background:'+bg+';color:'+color+';border:1px solid '+border+';';
+      return s;
+    }
+    function setUpiCheckHead(cols){
+      const thead=document.getElementById('upiCheckHead'); thead.innerHTML='';
+      const tr=document.createElement('tr');
+      cols.forEach(c=>{ const th=document.createElement('th'); th.textContent=c[0]; th.style.width=c[1]; tr.appendChild(th); });
+      thead.appendChild(tr);
+    }
+    function renderUpiCheck(){
+      const tbody=document.getElementById('upiCheckBody'); tbody.innerHTML='';
+      const kw=document.getElementById('upiCheckSearch').value.trim().toLowerCase();
+      const dupOnly=document.getElementById('upiCheckDupOnly').checked;
+
+      // จัดกลุ่มตาม UPI — 1 กลุ่ม = 1 UPI (เก็บทุกหัวบ้านที่ใช้ตัวนี้)
+      const map=new Map();
+      accountsRows.forEach(r=>{
+        const raw=String(r.upi||'').trim(); if(!raw) return;
+        const k=raw.toLowerCase();
+        if(!map.has(k)) map.set(k, { upi:raw, rows:[] });
+        map.get(k).rows.push(r);
+      });
+
+      const detail = upiCheckDetail!=null ? map.get(upiCheckDetail) : null;
+      if(upiCheckDetail!=null && !detail) upiCheckDetail=null;   // UPI นั้นถูกลบไปแล้ว → กลับหน้ารายการ
+
+      document.getElementById('upiCheckFilterBar').style.display = detail ? 'none' : 'block';
+      document.getElementById('upiCheckBackBar').style.display   = detail ? 'block' : 'none';
+
+      // ===== หน้าเจาะดู: UPI ตัวเดียว อยู่ที่หัวบ้านไหนบ้าง =====
+      if(detail){
+        document.getElementById('upiCheckDetailLabel').textContent =
+          detail.upi+' — ใส่ไว้ '+detail.rows.length+' หัวบ้าน';
+        setUpiCheckHead([['อีเมลหัวบ้าน','40%'],['คนที่ใส่','18%'],['วันที่ใส่','18%'],['หมดอายุหัวบ้าน','24%']]);
+        document.getElementById('upiCheckCount').textContent=detail.rows.length;
+        detail.rows.forEach(r=>{
+          const tr=document.createElement('tr');
+          [r.email, r.upi_by, r.upi_at].forEach(v=>{
+            const td=document.createElement('td'); td.textContent=v||'-'; tr.appendChild(td);
+          });
+          const tdExp=document.createElement('td');
+          tdExp.textContent=displayDateBE(r.expire_date||'');
+          const c=dateColor(r.expire_date,false);
+          if(c){ tdExp.style.backgroundColor=c; tdExp.classList.add('cellcolor'); }
+          tr.appendChild(tdExp); tbody.appendChild(tr);
+        });
+        return;
+      }
+
+      // ===== หน้ารายการ: 1 บรรทัด = 1 UPI =====
+      setUpiCheckHead([['UPI','46%'],['คนที่ใส่','16%'],['วันที่ใส่','16%'],['จำนวนอีเมล (กดดู)','22%']]);
+      let groups=[...map.values()];
+      if(kw) groups=groups.filter(g=>(g.upi+' '+g.rows.map(r=>r.email||'').join(' ')).toLowerCase().includes(kw));
+      if(dupOnly) groups=groups.filter(g=>g.rows.length>1 || badUpiSet.has(g.upi.toLowerCase()));
+      groups.sort((a,b)=>a.upi.localeCompare(b.upi));
+
+      document.getElementById('upiCheckCount').textContent=groups.length;
+      if(groups.length===0){
+        const tr=document.createElement('tr'); const td=document.createElement('td');
+        td.colSpan=4; td.style.color='#888';
+        td.textContent = kw ? 'ไม่พบ UPI หรืออีเมลที่ค้นหา' : 'ยังไม่มีหัวบ้านที่ใส่ UPI ไว้';
+        tr.appendChild(td); tbody.appendChild(tr); return;
+      }
+      groups.forEach(g=>{
+        const k=g.upi.toLowerCase(), n=g.rows.length, first=g.rows[0];
+        const tr=document.createElement('tr');
+        [g.upi, first.upi_by, first.upi_at].forEach(v=>{
+          const td=document.createElement('td'); td.textContent=v||'-'; tr.appendChild(td);
+        });
+        // จำนวนอีเมลที่ผูกกับ UPI ตัวนี้ — มากกว่า 1 = แดง (ผิดปกติ), 1 = เขียว
+        const tdSt=document.createElement('td');
+        tdSt.style.cursor='pointer'; tdSt.title='กดเพื่อดูว่าใส่ไว้ที่อีเมลไหนบ้าง';
+        tdSt.onclick=()=>upiCheckOpen(k);
+        tdSt.appendChild(n>1
+          ? upiTag(n+' อีเมล','#ffe3e3','#c92a2a','#ff8787')
+          : upiTag('1 อีเมล','#d8f3df','#2f9e44','#69db7c'));
+        if(badUpiSet.has(k)) tdSt.appendChild(upiTag('เสีย','#fff3bf','#5c4400','#ffe066'));
+        tr.appendChild(tdSt); tbody.appendChild(tr);
+      });
+    }
+
+    /* ===== คลัง UPI (ตาราง upi_stock) — แอดมินเติม / ทุกคนกดเบิก =====
+       ครั้งแรกต้องรัน SQL ในไฟล์ add_upi_stock_table.sql */
+    let upiHistRows = [];
+    function showUpiAlert(m){ const el=document.getElementById('upiStockAlert'); el.textContent=m; el.className='modal-alert show'; }
+    function hideUpiAlert(){ const el=document.getElementById('upiStockAlert'); el.textContent=''; el.className='modal-alert'; }
+    function openUpiStockModal(){
+      hideUpiAlert();
+      document.getElementById('upiAdminBox').style.display = isAdmin() ? 'block' : 'none';
+      document.getElementById('upiRedeemBtn').style.display = canEdit() ? 'inline-block' : 'none';
+      // แอดมิน = เห็นของทุกคน + เลือกกรองรายคนได้ / คนอื่น = เห็นเฉพาะที่ตัวเองเบิก
+      const admin=isAdmin();
+      document.getElementById('upiFilterUserWrap').style.display = admin ? '' : 'none';
+      document.getElementById('upiFilterGrid').style.gridTemplateColumns = admin ? 'repeat(3,1fr) auto' : 'repeat(2,1fr) auto';
+      document.getElementById('upiHistTitle').textContent = admin ? '🧾 ประวัติการเบิก' : '🧾 ประวัติการเบิกของฉัน';
+      const sel=document.getElementById('upiFilterUser');
+      sel.innerHTML='<option value="">ทุกคน</option>'
+        + Object.keys(userNameMap).sort().map(u=>'<option value="'+escapeHtml(u)+'">'+escapeHtml(userNameMap[u]||u)+'</option>').join('');
+      // เปิดมาเริ่มที่เดือนปัจจุบัน (ไม่ดึงทั้งหมด)
+      document.getElementById('upiFilterDate').value='';
+      document.getElementById('upiFilterMonth').value = toDateTimeInput(new Date()).slice(0,7);
+      document.getElementById('upiStockModalBackdrop').style.display='block';
+      loadUpiStock();
+    }
+    function closeUpiStockModal(){ document.getElementById('upiStockModalBackdrop').style.display='none'; }
+    // เลือกวัน = ล้างเดือน / เลือกเดือน = ล้างวัน (กันงงว่าอันไหนมีผล)
+    function upiPickDate(){ if(document.getElementById('upiFilterDate').value) document.getElementById('upiFilterMonth').value=''; loadUpiStock(); }
+    function upiPickMonth(){ if(document.getElementById('upiFilterMonth').value) document.getElementById('upiFilterDate').value=''; loadUpiStock(); }
+    function upiClearFilter(){
+      document.getElementById('upiFilterUser').value='';
+      document.getElementById('upiFilterDate').value='';
+      document.getElementById('upiFilterMonth').value='';
+      loadUpiStock();
+    }
+
+    async function loadUpiStock(){
+      const { count, error:cErr } = await sb.from('upi_stock')
+        .select('id',{ count:'exact', head:true }).eq('status','AVAILABLE');
+      if(cErr){ showUpiAlert('โหลดไม่สำเร็จ: '+cErr.message+'\n(ถ้าเพิ่งใช้ครั้งแรก ให้รัน SQL สร้างตาราง upi_stock ก่อน — ไฟล์ add_upi_stock_table.sql)'); return; }
+      document.getElementById('upiRemaining').textContent = (count||0).toLocaleString();
+
+      const who   = document.getElementById('upiFilterUser').value;
+      const day   = document.getElementById('upiFilterDate').value;
+      const month = document.getElementById('upiFilterMonth').value;
+
+      let q = sb.from('upi_stock').select('*').eq('status','USED');
+      if(!isAdmin()) q = q.eq('redeemed_by', currentUser.username);   // ไม่ใช่แอดมิน = เห็นแค่ของตัวเอง
+      else if(who)   q = q.eq('redeemed_by', who);
+      if(day){
+        const p=day.split('-'); const s=new Date(+p[0],+p[1]-1,+p[2]); const e=new Date(s); e.setDate(e.getDate()+1);
+        q = q.gte('redeemed_at', s.toISOString()).lt('redeemed_at', e.toISOString());
+      } else if(month){
+        const p=month.split('-'); const s=new Date(+p[0],+p[1]-1,1); const e=new Date(+p[0],+p[1],1);
+        q = q.gte('redeemed_at', s.toISOString()).lt('redeemed_at', e.toISOString());
+      }
+      const { data, error } = await q.order('redeemed_at',{ascending:false}).limit(200);
+      if(error){ showUpiAlert('โหลดประวัติไม่สำเร็จ: '+error.message); return; }
+      upiHistRows = data||[];
+      renderUpiHist();
+    }
+    function renderUpiHist(){
+      const tbody=document.getElementById('upiHistBody'); tbody.innerHTML='';
+      document.getElementById('upiHistCount').textContent = upiHistRows.length;
+      if(upiHistRows.length===0){
+        const tr=document.createElement('tr'); const td=document.createElement('td');
+        td.colSpan=4; td.style.color='#888';
+        td.textContent='ไม่พบการเบิกตามตัวกรองที่เลือก (กด "ล้างตัวกรอง" เพื่อดูทั้งหมด)';
+        tr.appendChild(td); tbody.appendChild(tr); return;
+      }
+      upiHistRows.forEach(r=>{
+        const tr=document.createElement('tr');
+        [r.code, userNameMap[r.redeemed_by]||r.redeemed_by||'', retryDueBE(r.redeemed_at, true), r.note||''].forEach(v=>{
+          const td=document.createElement('td'); td.textContent=v||''; tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    // เบิก 1 อัน — จองด้วย update แบบมีเงื่อนไข (status ยังเป็น AVAILABLE เท่านั้นถึงจะติด)
+    // กดพร้อมกันหลายเครื่องจะได้คนละอันเสมอ ถ้าชนกันก็วนหยิบอันถัดไป
+    async function redeemUpi(){
+      if(!canEdit()){ showUpiAlert('บัญชีนี้ดูข้อมูลเท่านั้น'); return; }
+      hideUpiAlert();
+      const btn=document.getElementById('upiRedeemBtn'); btn.disabled=true; btn.textContent='กำลังเบิก...';
+      try{
+        for(let attempt=0; attempt<6; attempt++){
+          const { data:avail, error } = await sb.from('upi_stock').select('id,code,note')
+            .eq('status','AVAILABLE').order('id',{ascending:true}).limit(1);
+          if(error){ showUpiAlert('เบิกไม่สำเร็จ: '+error.message); return; }
+          if(!avail || !avail.length){ showUpiAlert('ไม่มี UPI เหลือในคลังแล้ว — แจ้งแอดมินให้เติมก่อน'); return; }
+
+          const pick = avail[0];
+          const { data:won, error:uErr } = await sb.from('upi_stock')
+            .update({ status:'USED', redeemed_by:currentUser.username, redeemed_at:new Date().toISOString() })
+            .eq('id', pick.id).eq('status','AVAILABLE').select('code,note');
+          if(uErr){ showUpiAlert('เบิกไม่สำเร็จ: '+uErr.message); return; }
+          if(won && won.length){ showUpiResult(won[0].code); await loadUpiStock(); return; }
+          // ชนกับคนอื่น → วนหยิบอันถัดไป
+        }
+        showUpiAlert('คนเบิกพร้อมกันหลายคน ลองกดใหม่อีกครั้ง');
+      } finally {
+        btn.disabled=false; btn.textContent='🎁 เบิก UPI 1 อัน';
+      }
+    }
+
+    // popup โชว์ UPI ที่เบิกได้ + ปุ่มคัดลอก
+    function showUpiResult(code){
+      const html = '<div style="text-align:left;">'
+        + '<div style="background:#f1faf4;border:1px solid #c3ebcf;border-radius:10px;padding:14px;'
+        +      'font-size:18px;font-weight:800;color:#2b3a2e;word-break:break-all;text-align:center;">'
+        +   escapeHtml(code)
+        + '</div>'
+        + '<button class="btn-yellow upi-copy" style="margin-top:12px;width:100%;padding:10px;">📋 คัดลอก</button>'
+        + '</div>';
+      document.getElementById('popupIcon').className='popup-icon success';
+      document.getElementById('popupIcon').textContent='✓';
+      document.getElementById('popupTitle').textContent='เบิก UPI สำเร็จ';
+      document.getElementById('popupMsg').innerHTML = html;
+      document.getElementById('popupMsg').style.whiteSpace='normal';
+      popupCb = null;
+      document.getElementById('popupBackdrop').style.display='block';
+      const btn=document.querySelector('#popupMsg .upi-copy');
+      if(btn){
+        btn.onclick = async ()=>{
+          try { await navigator.clipboard.writeText(code); }
+          catch(e){
+            const ta=document.createElement('textarea'); ta.value=code;
+            document.body.appendChild(ta); ta.select();
+            document.execCommand('copy'); document.body.removeChild(ta);
+          }
+          const old=btn.textContent; btn.textContent='✓ คัดลอกแล้ว';
+          setTimeout(()=>{ btn.textContent=old; }, 1200);
+        };
+      }
+    }
+
+    async function addUpiStock(){
+      hideUpiAlert();
+      if(!isAdmin()){ showUpiAlert('เฉพาะแอดมินเท่านั้นที่เติม UPI เข้าคลังได้'); return; }
+      const raw=document.getElementById('upiRaw').value;
+      const note=document.getElementById('upiNote').value.trim();
+      // แยกด้วยบรรทัด/เว้นวรรค/ลูกน้ำ แล้วตัดที่ซ้ำกันเองในข้อความ
+      const codes=[...new Set(String(raw||'').split(/[\s,;|]+/).map(s=>s.trim()).filter(Boolean))];
+      if(!codes.length){ showUpiAlert('กรุณาวาง UPI ที่ต้องการเติม'); return; }
+      const btn=document.getElementById('upiAddBtn'); btn.disabled=true; btn.textContent='กำลังเติม...';
+      // upsert + ignoreDuplicates = โค้ดที่มีอยู่แล้วในคลังถูกข้าม ไม่พังทั้งชุด
+      const { data, error }=await sb.from('upi_stock')
+        .upsert(codes.map(c=>({ code:c, note, added_by:currentUser.username })),
+                { onConflict:'code', ignoreDuplicates:true })
+        .select('id');
+      btn.disabled=false; btn.textContent='เติมเข้าคลัง';
+      if(error){ showUpiAlert('เติมไม่สำเร็จ: '+error.message); return; }
+      const added=(data||[]).length, dup=codes.length-added;
+      document.getElementById('upiRaw').value='';
+      await loadUpiStock();
+      showUpiAlert('เติมเข้าคลังแล้ว '+added+' อัน'+(dup>0 ? ' (ข้ามที่ซ้ำกับในคลัง '+dup+' อัน)' : ''));
+    }
+
+    /* ===== หน้ารวม UPI เสีย (ตาราง bad_upi) =====
+       ครั้งแรกต้องรัน SQL นี้ใน Supabase → SQL Editor:
+
+       create table if not exists bad_upi (
+         id bigint generated always as identity primary key,
+         upi text not null,
+         email text default '',
+         note text default '',
+         created_by text default '',
+         created_at timestamptz default now()
+       );
+       alter table bad_upi enable row level security;
+       create policy "auth all bad_upi" on bad_upi
+         for all to authenticated using (true) with check (true);
+    */
+    let badUpiRows = [];
+    function showBadUpiAlert(m){ const el=document.getElementById('badUpiAlert'); el.textContent=m; el.className='modal-alert show'; }
+    function hideBadUpiAlert(){ const el=document.getElementById('badUpiAlert'); el.textContent=''; el.className='modal-alert'; }
+    function openBadUpiModal(){
+      hideBadUpiAlert();
+      document.getElementById('buSearch').value='';
+      document.getElementById('badUpiModalBackdrop').style.display='block';
+      loadBadUpi();
+    }
+    function closeBadUpiModal(){ document.getElementById('badUpiModalBackdrop').style.display='none'; }
+    async function loadBadUpi(){
+      const { data, error } = await sb.from('bad_upi').select('*').order('id',{ascending:false});
+      if(error){ showBadUpiAlert('โหลดไม่สำเร็จ: '+error.message+'\n(ถ้าเพิ่งใช้ครั้งแรก ให้รัน SQL สร้างตาราง bad_upi ก่อน — ดูคอมเมนต์เหนือฟังก์ชันนี้ในโค้ด)'); return; }
+      badUpiRows=data||[]; renderBadUpiTable();
+    }
+    function renderBadUpiTable(){
+      const tbody=document.getElementById('badUpiTableBody'); tbody.innerHTML='';
+      const kw=document.getElementById('buSearch').value.trim().toLowerCase();
+      const rows = kw
+        ? badUpiRows.filter(r=>(String(r.upi||'')+' '+String(r.email||'')+' '+String(r.note||'')).toLowerCase().includes(kw))
+        : badUpiRows;
+      if(rows.length===0){
+        const tr=document.createElement('tr'); const td=document.createElement('td');
+        td.colSpan=5; td.style.color='#888';
+        td.textContent = kw ? 'ไม่พบ UPI ที่ค้นหา' : 'ยังไม่มีรายการ UPI เสีย';
+        tr.appendChild(td); tbody.appendChild(tr); return;
+      }
+      rows.forEach(r=>{
+        const tr=document.createElement('tr');
+        [r.upi, r.email, r.note, userNameMap[r.created_by]||r.created_by||''].forEach(v=>{
+          const td=document.createElement('td'); td.textContent=v||''; tr.appendChild(td);
+        });
+        const tdAct=document.createElement('td'); tdAct.className='actions'; tdAct.style.textAlign='left';
+        tdAct.textContent=retryDueBE(r.created_at, true)+' ';
+        if(canEdit()){
+          const b=document.createElement('button'); b.className='btn-red'; b.textContent='🗑 ลบ';
+          b.style.padding='5px 10px'; b.style.fontSize='12px'; b.style.marginLeft='4px';
+          b.onclick=()=>deleteBadUpi(r);
+          tdAct.appendChild(b);
+        }
+        tr.appendChild(tdAct); tbody.appendChild(tr);
+      });
+    }
+    async function saveBadUpi(){
+      hideBadUpiAlert();
+      if(!canEdit()){ showBadUpiAlert('บัญชีนี้ดูข้อมูลเท่านั้น'); return; }
+      const upi=document.getElementById('buUpi').value.trim();
+      const email=document.getElementById('buEmail').value.trim();
+      const note=document.getElementById('buNote').value.trim();
+      if(!upi){ showBadUpiAlert('กรุณาใส่เลข UPI'); return; }
+      // กันใส่ซ้ำ (เทียบแบบไม่สนตัวพิมพ์เล็ก/ใหญ่)
+      const dup = badUpiRows.find(r=>String(r.upi||'').trim().toLowerCase()===upi.toLowerCase());
+      if(dup){ showBadUpiAlert('UPI นี้มีในรายการอยู่แล้ว'+(dup.email?' (หัวบ้าน '+dup.email+')':'')); return; }
+      const btn=document.getElementById('buSaveBtn'); btn.disabled=true;
+      const { error }=await sb.from('bad_upi').insert({ upi, email, note, created_by:currentUser.username });
+      btn.disabled=false;
+      if(error){ showBadUpiAlert('บันทึกไม่สำเร็จ: '+error.message); return; }
+      document.getElementById('buUpi').value=''; document.getElementById('buEmail').value=''; document.getElementById('buNote').value='';
+      await loadBadUpi();
+    }
+    async function deleteBadUpi(r){
+      if(!confirm('ลบ UPI "'+r.upi+'" ออกจากรายการ?')) return;
+      const { error }=await sb.from('bad_upi').delete().eq('id',r.id);
+      if(error){ showBadUpiAlert('ลบไม่สำเร็จ: '+error.message); return; }
+      await loadBadUpi();
+    }
+
     async function quickEditCell(row, key, header, oldValue){
       if(!canEdit()){ showPopup('ไม่มีสิทธิ์','บัญชีนี้ดูข้อมูลเท่านั้น','error'); return; }
       let newValue;
@@ -1672,6 +2827,7 @@
 
       const payload={}; payload[key]=newValue;
       if(renewCredit!==null) payload.credit=renewCredit;   // ต่ออายุ = หักเครดิตพร้อมกัน
+      stampUpi(payload);                                    // แก้ UPI = ประทับคนใส่/วันที่ให้อัตโนมัติ
       const oldRow = accountsRows.find(r=>r.id===row.id);
       const { error } = await sb.from('accounts').update(payload).eq('id', row.id);
       if(error){ showPopup('แก้ไขไม่สำเร็จ', error.message, 'error'); return; }
@@ -1880,6 +3036,20 @@ const ROOM_FIELDS = [
   { key:'expire_date', header:'หมดอายุหัวบ้าน',  width:110, dateExpire:true },
 ];
 
+// คอลัมน์ของ "หน้ารายชื่อหัวบ้าน" (รวมห้องว่างของหัวบ้านเดียวกันเป็นแถวเดียว)
+const ROOM_GROUP_FIELDS = [
+  { key:'email',       header:'Email หัวบ้าน',   width:260 },
+  { key:'pass',        header:'Pass',            width:170 },
+  { key:'__count',     header:'ห้องว่าง',        width:90  },
+  { key:'machine',     header:'เครื่อง',          width:120 },
+  { key:'expire_date', header:'หมดอายุหัวบ้าน',  width:120, dateExpire:true },
+];
+
+// null = โชว์รายชื่อหัวบ้าน / มีค่า = เจาะดูห้องว่างของหัวบ้าน id นั้น
+let roomExpandId = null;
+function roomOpenHouse(id){ roomExpandId = id; renderRoomPage(); }
+function roomBackToList(){ roomExpandId = null; renderRoomPage(); }
+
 /// กวาดหาช่อง Use ที่ "ว่าง" — จากหัวบ้านที่ยังไม่หมดอายุเท่านั้น
 // ว่าง = ใส่คำว่า 'ว่าง' หรือ ไม่ได้ใส่อะไรเลย (ช่องเปล่า) → นับเหมือนกัน
 function collectEmptyRooms(){
@@ -1897,8 +3067,11 @@ function collectEmptyRooms(){
 
 function toggleRoomPage(){
   isRoomPage = !isRoomPage;
+  roomExpandId = null;   // เข้า/ออกหน้าห้องว่าง = เริ่มที่รายชื่อหัวบ้านเสมอ
+  const bb=document.getElementById('roomBackBar'); if(bb) bb.style.display='none';
   const btn = document.getElementById('roomPageBtn');
   const title = document.getElementById('pageTitle');
+  const mSel=document.getElementById('roomMachineSel');
   if(isRoomPage){
     // ปิดหน้า "หมดอายุ" ถ้าเปิดค้างอยู่ กันชนกัน
     if(typeof isExpiredPage!=='undefined' && isExpiredPage){
@@ -1907,14 +3080,23 @@ function toggleRoomPage(){
     }
     btn.textContent='◂ กลับหน้าหัวบ้าน'; btn.className='btn-gray';
     title.textContent='ห้องว่าง';
+    // เติมตัวเลือกเครื่อง (จากรายชื่อเดียวกับช่อง "เครื่อง")
+    if(mSel){
+      const cur=mSel.value;
+      mSel.innerHTML='<option value="">ทุกเครื่อง</option>'+machineOptions.map(m=>'<option>'+escapeHtml(m)+'</option>').join('');
+      mSel.value=cur; if(mSel.value!==cur) mSel.value='';
+      mSel.style.display='';
+    }
     renderRoomPage();
   } else {
     btn.textContent='🏠 หน้าห้องว่าง'; btn.className='btn-primary';
     title.textContent='หัวบ้าน Panda & Good Game Premium';
+    if(mSel) mSel.style.display='none';
     applySearch();
   }
 }
 
+let lastRoomFilterSig = null;   // ลายเซ็นตัวกรองหน้าห้องว่าง — เปลี่ยนตัวกรอง = เด้งขึ้นบน, อย่างอื่น (ซิงก์/realtime) = คงตำแหน่ง
 function renderRoomPage(){
   let rooms = collectEmptyRooms();
 
@@ -1927,11 +3109,47 @@ function renderRoomPage(){
       return ws.every(w=>hay.includes(w));
     });
   }
+  // กรองตามเครื่องที่เลือก (เทียบเป็นชื่อเต็ม — ช่อง "เครื่อง" เก็บหลายชื่อคั่นด้วย , )
+  const mSel=document.getElementById('roomMachineSel');
+  const mv = mSel ? mSel.value : '';
+  if(mv) rooms = rooms.filter(it=>String(it.row.machine||'').split(',').map(s=>s.trim()).includes(mv));
   // เรียงตาม id หัวบ้าน → ช่อง
   rooms.sort((a,b)=> (a.row.id-b.row.id) || (USE_KEYS.indexOf(a.key)-USE_KEYS.indexOf(b.key)));
 
-  vRows = rooms; vLastStart = -1; vLastEnd = -1;
+  // เจาะดูหัวบ้านเดียว แต่ห้องหมดแล้ว (เพิ่งเบิกไปหมด) → เด้งกลับหน้ารายชื่อเอง
+  if(roomExpandId!=null && !rooms.some(it=>it.row.id===roomExpandId)) roomExpandId = null;
+
+  // รวมห้องว่างของหัวบ้านเดียวกันเป็นแถวเดียว (ใช้ตอนโชว์รายชื่อ)
+  const groups = [];
+  const gmap = new Map();
+  rooms.forEach(it=>{
+    let g = gmap.get(it.row.id);
+    if(!g){ g = { row: it.row, keys: [] }; gmap.set(it.row.id, g); groups.push(g); }
+    g.keys.push(it.key);
+  });
+
+  const expanded = (roomExpandId!=null);
+  const FIELDS = expanded ? ROOM_FIELDS : ROOM_GROUP_FIELDS;
+  const items  = expanded ? rooms.filter(it=>it.row.id===roomExpandId) : groups;
+
+  // แถบปุ่มย้อนกลับ โผล่เฉพาะตอนเจาะดูหัวบ้านเดียว
+  const backBar=document.getElementById('roomBackBar');
+  if(backBar){
+    backBar.style.display = expanded ? 'block' : 'none';
+    if(expanded){
+      const g = gmap.get(roomExpandId);
+      document.getElementById('roomBackLabel').textContent =
+        (g ? (g.row.email||('ID '+g.row.id))+' — ว่าง '+g.keys.length+' ห้อง' : '');
+    }
+  }
+
+  const filterSig = JSON.stringify([kw, mv, roomExpandId]);
+  const resetScroll = (filterSig !== lastRoomFilterSig);
+  lastRoomFilterSig = filterSig;
+
+  vRows = items; vLastStart = -1; vLastEnd = -1;
   const wrap = vGetWrap();
+  const keepScroll = wrap ? wrap.scrollTop : 0;   // จำตำแหน่งสกรอลล์ตาราง ไว้คืนหลังวาดใหม่
   const winY = window.scrollY;   // กัน window เด้งขึ้นบนตอน tbody หดชั่วขณะ
   const thead = document.getElementById('tableHead'), tbody = document.getElementById('tableBody');
   thead.innerHTML=''; tbody.innerHTML='';
@@ -1939,26 +3157,29 @@ function renderRoomPage(){
   const hr=document.createElement('tr');
   const thNo=document.createElement('th'); thNo.textContent='ลำดับ';
   thNo.style.width='50px'; thNo.style.minWidth='50px'; thNo.style.maxWidth='50px'; hr.appendChild(thNo);
-  ROOM_FIELDS.forEach(f=>{
+  FIELDS.forEach(f=>{
     const th=document.createElement('th'); th.textContent=f.header;
     th.style.width=f.width+'px'; th.style.minWidth=f.width+'px'; th.style.maxWidth=f.width+'px';
     hr.appendChild(th);
   });
   const thAct=document.createElement('th'); thAct.textContent='จัดการ';
-  thAct.style.width='110px'; thAct.style.minWidth='110px'; thAct.style.maxWidth='110px'; hr.appendChild(thAct);
+  thAct.style.width='130px'; thAct.style.minWidth='130px'; thAct.style.maxWidth='130px'; hr.appendChild(thAct);
   thead.appendChild(hr);
 
-  const totalW = 50 + 110 + ROOM_FIELDS.reduce((s,f)=>s+f.width,0);
+  const totalW = 50 + 130 + FIELDS.reduce((s,f)=>s+f.width,0);
   const tableEl = thead.parentElement;
   tableEl.style.width = totalW+'px'; tableEl.style.minWidth = totalW+'px';
 
-  setStatus('หน้าห้องว่าง: '+rooms.length+' ห้องว่าง (จากหัวบ้านที่ยังไม่หมดอายุ)');
-  if(rooms.length===0){ window.scrollTo(0,winY); return; }
+  setStatus(expanded
+    ? ('ห้องว่างของหัวบ้านนี้: '+items.length+' ห้อง')
+    : ('หน้าห้องว่าง: '+groups.length+' หัวบ้าน (รวม '+rooms.length+' ห้องว่าง)'));
+  if(items.length===0){ window.scrollTo(0,winY); return; }
 
-  vCtx = { mode:'room', colCount: ROOM_FIELDS.length + 2 };
+  vCtx = { mode: expanded ? 'room' : 'roomGroup', colCount: FIELDS.length + 2 };
   bindVScroll();
   renderWindow();
-  if(wrap){ wrap.scrollTop = 0; renderWindow(); }
+  // เปลี่ยนตัวกรอง = เริ่มที่บนสุด, วาดซ้ำจากซิงก์/realtime = คงตำแหน่งเดิม ไม่เด้ง
+  if(wrap){ wrap.scrollTop = resetScroll ? 0 : keepScroll; renderWindow(); }
   window.scrollTo(0, winY);
 }
 
@@ -1970,15 +3191,24 @@ function showClaimResult(row, newValue){
   if(tname && !tname.includes('@')) tname += '@gmail.com';      // ลูกบ้านเติม @gmail.com ให้เป็นอีเมล
   const tenant = [tname, p.date].filter(Boolean).join(' ');     // อีเมลลูกค้า + วันที่
 
-  // ข้อความชุดเดียว (นี่คือค่าที่จะถูกคัดลอก)
-  const combined = 'หัวบ้าน\n'+head+'\n\nลูกบ้าน\n'+tenant;
+  // หัวข้อหัวบ้านต่อท้ายด้วยชื่อเครื่อง เช่น "หัวบ้าน Best" (ไม่มีเครื่อง = "หัวบ้าน" เฉยๆ)
+  const machine = String(row.machine||'').trim();
+  const headLabel = 'หัวบ้าน' + (machine ? ' '+machine : '');
 
+  // ข้อความชุดเดียว (นี่คือค่าที่จะถูกคัดลอก)
+  const combined = headLabel+'\n'+head+'\n\nลูกบ้าน\n'+tenant;
+
+  // แสดงเป็น 2 บล็อกคุมระยะห่างเอง (ไม่ใช้บรรทัดว่างจาก \n\n ที่ทำให้ห่างเกิน)
+  // ส่วนข้อความที่คัดลอกยังเป็น combined เหมือนเดิม
   const html =
     '<div style="text-align:left;">'
     + '<div style="background:#f1faf4;border:1px solid #c3ebcf;border-radius:10px;'
-    +      'padding:12px 14px;font-size:14px;color:#2b3a2e;white-space:pre-wrap;'
-    +      'word-break:break-all;line-height:1.7;">'
-    +   escapeHtml(combined)
+    +      'padding:12px 14px;font-size:14px;color:#2b3a2e;'
+    +      'word-break:break-all;line-height:1.45;">'
+    +   '<div style="font-weight:800;">'+escapeHtml(headLabel)+'</div>'
+    +   '<div>'+escapeHtml(head)+'</div>'
+    +   '<div style="font-weight:800;margin-top:9px;">ลูกบ้าน</div>'
+    +   '<div>'+escapeHtml(tenant)+'</div>'
     + '</div>'
     + '<button class="btn-yellow claim-copy" style="margin-top:12px;width:100%;padding:10px;">📋 คัดลอกทั้งหมด</button>'
     + '</div>';
@@ -2008,6 +3238,36 @@ function showClaimResult(row, newValue){
 }
     
     
+// แถวรายชื่อหัวบ้าน — 1 แถว = 1 หัวบ้าน บอกว่าเหลือกี่ห้อง กดเข้าไปดูว่าว่างช่องไหน
+function buildRoomGroupRow(item, idx){
+  const { row, keys } = item;
+  const tr = document.createElement('tr'); tr._row = row;
+
+  const tdNo=document.createElement('td'); tdNo.textContent=idx+1;
+  tdNo.style.textAlign='center'; tdNo.style.color='#888'; tr.appendChild(tdNo);
+
+  ROOM_GROUP_FIELDS.forEach(f=>{
+    const td=document.createElement('td');
+    if(f.key==='__count'){
+      td.innerHTML='<b style="color:#2f9e44;">'+keys.length+'</b> ห้อง';
+      td.style.textAlign='center';
+    } else {
+      const value=row[f.key]||'';
+      td.textContent=value;
+      if(f.dateExpire){ const c=dateColor(value,false); if(c){ td.style.backgroundColor=c; td.classList.add('cellcolor'); } }
+    }
+    tr.appendChild(td);
+  });
+
+  const tdAct=document.createElement('td'); tdAct.className='actions';
+  const b=document.createElement('button'); b.className='btn-primary';
+  b.textContent='ดูห้องว่าง'; b.style.padding='5px 14px'; b.style.fontSize='13px';
+  b.onclick=()=>roomOpenHouse(row.id);
+  tdAct.appendChild(b);
+  tr.appendChild(tdAct);
+  return tr;
+}
+
   function buildRoomRow(item, idx){
   const { row, key, kicked } = item;
   const n = USE_KEYS.indexOf(key)+1;
